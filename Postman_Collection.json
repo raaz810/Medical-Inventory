@@ -1,0 +1,292 @@
+{
+  "info": {
+    "name": "MediStock Inventory & Supplier Management API",
+    "description": "Postman Collection for MediStock Spring Boot Backend APIs",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "Authentication",
+      "item": [
+        {
+          "name": "Login User",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"admin@medistock.com\",\n  \"password\": \"admin123\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/auth/login",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "auth", "login"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Supplier Management",
+      "item": [
+        {
+          "name": "Get All Suppliers",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/api/suppliers?page=0&size=10",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "suppliers"]
+            }
+          }
+        },
+        {
+          "name": "Create Supplier",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"supplierName\": \"Apex Pharma Dist\",\n  \"contactPerson\": \"Sarah Jenkins\",\n  \"email\": \"sarah@apexpharma.com\",\n  \"phone\": \"+1 555-9012\",\n  \"address\": \"450 Health Ave\",\n  \"city\": \"Boston\",\n  \"state\": \"MA\",\n  \"country\": \"USA\",\n  \"status\": \"ACTIVE\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/suppliers",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "suppliers"]
+            }
+          }
+        },
+        {
+          "name": "Get Supplier by ID",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/api/suppliers/1",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "suppliers", "1"]
+            }
+          }
+        },
+        {
+          "name": "Update Supplier",
+          "request": {
+            "method": "PUT",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"supplierName\": \"Apex Pharma Global\",\n  \"contactPerson\": \"Sarah Jenkins\",\n  \"email\": \"sarah@apexpharma.com\",\n  \"phone\": \"+1 555-9012\",\n  \"address\": \"450 Health Ave Suite 200\",\n  \"city\": \"Boston\",\n  \"state\": \"MA\",\n  \"country\": \"USA\",\n  \"status\": \"ACTIVE\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/suppliers/1",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "suppliers", "1"]
+            }
+          }
+        },
+        {
+          "name": "Delete Supplier",
+          "request": {
+            "method": "DELETE",
+            "url": {
+              "raw": "{{baseUrl}}/api/suppliers/1",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "suppliers", "1"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Medicine Inventory",
+      "item": [
+        {
+          "name": "Get All Medicines",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/api/medicines?page=0&size=10",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "medicines"]
+            }
+          }
+        },
+        {
+          "name": "Search Medicines",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/api/medicines/search?search=Ciprofloxacin",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "medicines", "search"],
+              "query": [{ "key": "search", "value": "Ciprofloxacin" }]
+            }
+          }
+        },
+        {
+          "name": "Get Medicine by ID",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/api/medicines/1",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "medicines", "1"]
+            }
+          }
+        },
+        {
+          "name": "Create Medicine",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"medicineCode\": \"MED-9901\",\n  \"medicineName\": \"Ciprofloxacin 500mg\",\n  \"genericName\": \"Ciprofloxacin\",\n  \"category\": \"Antibiotics\",\n  \"manufacturer\": \"Pfizer\",\n  \"unitPrice\": 4.50,\n  \"sellingPrice\": 10.00,\n  \"batchNumber\": \"BATCH-CPX-01\",\n  \"description\": \"Broad-spectrum antibiotic\",\n  \"supplierId\": 1\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/medicines",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "medicines"]
+            }
+          }
+        },
+        {
+          "name": "Update Medicine",
+          "request": {
+            "method": "PUT",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"medicineCode\": \"MED-9901\",\n  \"medicineName\": \"Ciprofloxacin 500mg (Updated)\",\n  \"genericName\": \"Ciprofloxacin\",\n  \"category\": \"Antibiotics\",\n  \"manufacturer\": \"Pfizer Inc\",\n  \"unitPrice\": 4.75,\n  \"sellingPrice\": 10.50,\n  \"batchNumber\": \"BATCH-CPX-02\",\n  \"description\": \"Updated broad-spectrum antibiotic\",\n  \"supplierId\": 1\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/medicines/1",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "medicines", "1"]
+            }
+          }
+        },
+        {
+          "name": "Delete Medicine",
+          "request": {
+            "method": "DELETE",
+            "url": {
+              "raw": "{{baseUrl}}/api/medicines/1",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "medicines", "1"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Inventory & Stock Operations",
+      "item": [
+        {
+          "name": "Get All Inventory",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/api/inventory",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "inventory"]
+            }
+          }
+        },
+        {
+          "name": "Stock IN",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"medicineId\": 1,\n  \"quantity\": 50,\n  \"remarks\": \"Shipment received from supplier\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/inventory/stock-in",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "inventory", "stock-in"]
+            }
+          }
+        },
+        {
+          "name": "Stock OUT",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"medicineId\": 1,\n  \"quantity\": 15,\n  \"remarks\": \"Dispensed to OPD ward\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/inventory/stock-out",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "inventory", "stock-out"]
+            }
+          }
+        },
+        {
+          "name": "Adjust Stock",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"medicineId\": 1,\n  \"quantity\": 100,\n  \"remarks\": \"Manual stock level reconciliation\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/inventory/adjust",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "inventory", "adjust"]
+            }
+          }
+        },
+        {
+          "name": "Get Low Stock Items",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/api/inventory/low-stock",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "inventory", "low-stock"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Stock Audit Logs",
+      "item": [
+        {
+          "name": "Get All Stock Logs",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/api/stocklogs",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "stocklogs"]
+            }
+          }
+        },
+        {
+          "name": "Get Stock Logs by Medicine ID",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/api/stocklogs/1",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "stocklogs", "1"]
+            }
+          }
+        }
+      ]
+    }
+  ],
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://localhost:8081"
+    }
+  ]
+}
