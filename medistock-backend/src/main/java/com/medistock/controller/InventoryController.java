@@ -53,6 +53,17 @@ public class InventoryController {
         return ResponseEntity.ok(ApiResponse.success(lowStock));
     }
 
+    @GetMapping("/out-of-stock")
+    @Operation(summary = "Get Out of Stock Items", description = "Get items where quantity == 0")
+    public ResponseEntity<ApiResponse<PageResponse<InventoryDTO>>> getOutOfStockInventory(
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "10") int size
+    ) {
+        Pageable pageable = PageRequest.of(page, size);
+        PageResponse<InventoryDTO> outOfStock = inventoryService.getOutOfStockInventory(pageable);
+        return ResponseEntity.ok(ApiResponse.success(outOfStock));
+    }
+
     @GetMapping("/medicine/{medicineId}")
     @Operation(summary = "Get Inventory by Medicine ID", description = "Fetch inventory stock details for a medicine")
     public ResponseEntity<ApiResponse<InventoryDTO>> getInventoryByMedicineId(@PathVariable Long medicineId) {
@@ -74,6 +85,12 @@ public class InventoryController {
             Authentication authentication
     ) {
         String performedBy = authentication != null ? authentication.getName() : "System User";
+        if (request.getLocation() != null || request.getStorageLocation() != null) {
+            String loc = request.getLocation() != null ? request.getLocation() : request.getStorageLocation();
+            try {
+                inventoryService.updateInventoryThresholds(request.getMedicineId(), null, null, loc);
+            } catch (Exception e) {}
+        }
         InventoryDTO updated = inventoryService.adjustStock(
                 request.getMedicineId(),
                 request.getQuantity(),

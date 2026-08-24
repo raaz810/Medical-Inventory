@@ -134,17 +134,48 @@ public class InventoryServiceImpl implements InventoryService {
                 .remarks(remarks)
                 .build());
 
-        // Low stock alert check
-        if (updatedInventory.getQuantity() < updatedInventory.getMinimumStock()) {
+        // Stock alert checks
+        if (updatedInventory.getQuantity() <= 0) {
+            notificationService.createNotification(
+                    "Out of Stock Alert: " + medicine.getMedicineName(),
+                    "Medicine " + medicine.getMedicineName() + " (" + medicine.getMedicineCode() +
+                            ") is completely OUT OF STOCK (0 units remaining).",
+                    NotificationType.OUT_OF_STOCK,
+                    com.medistock.enums.NotificationSeverity.CRITICAL,
+                    medicine.getId()
+            );
+        } else if (updatedInventory.getQuantity() <= updatedInventory.getMinimumStock()) {
             notificationService.createNotification(
                     "Low Stock Alert: " + medicine.getMedicineName(),
                     "Quantity for " + medicine.getMedicineName() + " (" + medicine.getMedicineCode() +
                             ") is below minimum threshold (" + updatedInventory.getQuantity() + " / " + updatedInventory.getMinimumStock() + ")",
-                    NotificationType.LOW_STOCK
+                    NotificationType.LOW_STOCK,
+                    com.medistock.enums.NotificationSeverity.WARNING,
+                    medicine.getId()
             );
         }
 
         return mapToDTO(updatedInventory);
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public PageResponse<InventoryDTO> getOutOfStockInventory(Pageable pageable) {
+        Page<Inventory> page = inventoryRepository.findOutOfStockItems(pageable);
+
+        List<InventoryDTO> dtos = page.getContent().stream()
+                .map(this::mapToDTO)
+                .toList();
+
+        return PageResponse.<InventoryDTO>builder()
+                .content(dtos)
+                .pageNumber(page.getNumber())
+                .pageSize(page.getSize())
+                .totalElements(page.getTotalElements())
+                .totalPages(page.getTotalPages())
+                .first(page.isFirst())
+                .last(page.isLast())
+                .build();
     }
 
     @Override
@@ -174,16 +205,28 @@ public class InventoryServiceImpl implements InventoryService {
         return inventoryRepository.countLowStockItems();
     }
 
+    @Override
+    @Transactional(readOnly = true)
+    public long countOutOfStockItems() {
+        return inventoryRepository.countOutOfStockItems();
+    }
+
+
     private InventoryDTO mapToDTO(Inventory inventory) {
         boolean isLow = inventory.getQuantity() != null && inventory.getMinimumStock() != null &&
-                inventory.getQuantity() < inventory.getMinimumStock();
+                inventory.getQuantity() <= inventory.getMinimumStock();
 
+        Medicine med = inventory.getMedicine();
         return InventoryDTO.builder()
                 .id(inventory.getId())
-                .medicineId(inventory.getMedicine().getId())
-                .medicineCode(inventory.getMedicine().getMedicineCode())
-                .medicineName(inventory.getMedicine().getMedicineName())
-                .category(inventory.getMedicine().getCategory())
+                .medicineId(med.getId())
+                .medicineCode(med.getMedicineCode())
+                .medicineName(med.getMedicineName())
+                .category(med.getCategory())
+                .manufacturer(med.getManufacturer())
+                .supplierId(med.getSupplier() != null ? med.getSupplier().getId() : null)
+                .supplierName(med.getSupplier() != null ? med.getSupplier().getSupplierName() : null)
+                .batchNumber(med.getBatchNumber())
                 .quantity(inventory.getQuantity())
                 .minimumStock(inventory.getMinimumStock())
                 .maximumStock(inventory.getMaximumStock())

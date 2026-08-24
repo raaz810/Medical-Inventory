@@ -45,7 +45,7 @@ public class NotificationController {
         return ResponseEntity.ok(ApiResponse.success(notifications));
     }
 
-    @GetMapping("/unread-count")
+    @GetMapping({"/unread-count", "/count"})
     @Operation(summary = "Get Unread Count", description = "Count of unread notifications for navbar badges")
     public ResponseEntity<ApiResponse<Long>> getUnreadCount() {
         long count = notificationService.getUnreadCount();
@@ -65,4 +65,12 @@ public class NotificationController {
         notificationService.markAllAsRead();
         return ResponseEntity.ok(ApiResponse.success(null, "All notifications marked as read"));
     }
+
+    @DeleteMapping("/{id}")
+    @Operation(summary = "Delete Notification", description = "Remove notification by ID")
+    public ResponseEntity<ApiResponse<Void>> deleteNotification(@PathVariable Long id) {
+        notificationService.deleteNotification(id);
+        return ResponseEntity.ok(ApiResponse.success(null, "Notification deleted successfully"));
+    }
 }
+

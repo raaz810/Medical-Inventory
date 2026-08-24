@@ -28,10 +28,13 @@ public class MedicineController {
     }
 
     @GetMapping
-    @Operation(summary = "Get All Medicines", description = "Paginated medicine search, category filter, and listing")
+    @Operation(summary = "Get All Medicines", description = "Paginated medicine search with multi-filter support")
     public ResponseEntity<ApiResponse<PageResponse<MedicineDTO>>> getAllMedicines(
             @RequestParam(required = false) String search,
             @RequestParam(required = false) String category,
+            @RequestParam(required = false) Long supplierId,
+            @RequestParam(required = false) String stockStatus,
+            @RequestParam(required = false) String batchNumber,
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "10") int size,
             @RequestParam(defaultValue = "medicineName") String sortBy,
@@ -39,7 +42,15 @@ public class MedicineController {
     ) {
         Sort sort = sortDir.equalsIgnoreCase("ASC") ? Sort.by(sortBy).ascending() : Sort.by(sortBy).descending();
         Pageable pageable = PageRequest.of(page, size, sort);
-        PageResponse<MedicineDTO> medicines = medicineService.getAllMedicines(search, category, pageable);
+
+        // Use enhanced search+filter if any filter param is provided
+        boolean hasFilters = supplierId != null || stockStatus != null || batchNumber != null;
+        PageResponse<MedicineDTO> medicines;
+        if (hasFilters) {
+            medicines = medicineService.searchAndFilter(search, category, supplierId, stockStatus, batchNumber, pageable);
+        } else {
+            medicines = medicineService.getAllMedicines(search, category, pageable);
+        }
         return ResponseEntity.ok(ApiResponse.success(medicines));
     }
 
@@ -48,6 +59,9 @@ public class MedicineController {
     public ResponseEntity<ApiResponse<PageResponse<MedicineDTO>>> searchMedicines(
             @RequestParam(required = false) String search,
             @RequestParam(required = false) String category,
+            @RequestParam(required = false) Long supplierId,
+            @RequestParam(required = false) String stockStatus,
+            @RequestParam(required = false) String batchNumber,
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "10") int size,
             @RequestParam(defaultValue = "medicineName") String sortBy,
@@ -55,7 +69,7 @@ public class MedicineController {
     ) {
         Sort sort = sortDir.equalsIgnoreCase("ASC") ? Sort.by(sortBy).ascending() : Sort.by(sortBy).descending();
         Pageable pageable = PageRequest.of(page, size, sort);
-        PageResponse<MedicineDTO> medicines = medicineService.getAllMedicines(search, category, pageable);
+        PageResponse<MedicineDTO> medicines = medicineService.searchAndFilter(search, category, supplierId, stockStatus, batchNumber, pageable);
         return ResponseEntity.ok(ApiResponse.success(medicines));
     }
 

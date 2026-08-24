@@ -14,7 +14,7 @@ public class SupplierDTO {
     @Email(message = "Invalid email format")
     private String email;
 
-    @Pattern(regexp = "^[0-9]{10,15}$", message = "Phone must be 10-15 digits")
+    @Pattern(regexp = "^[+]?[0-9\\s-]{7,20}$", message = "Invalid phone number format")
     private String phone;
 
     private String address;

@@ -64,10 +64,10 @@ export const LowStockAlerts = () => {
   return (
     <div>
       <div style={{ marginBottom: '28px' }}>
-        <h1 style={{ fontSize: '24px', fontWeight: 800, color: '#f8fafc', display: 'flex', alignItems: 'center', gap: '10px' }}>
-          <AlertTriangle color="#f59e0b" size={28} /> Low Stock & Inventory Replenishment Alert Center
+        <h1 style={{ fontSize: '24px', fontWeight: 800, color: '#1e293b', display: 'flex', alignItems: 'center', gap: '10px' }}>
+          <AlertTriangle color="#d97706" size={28} /> Low Stock & Inventory Replenishment Alert Center
         </h1>
-        <p style={{ color: '#94a3b8', fontSize: '14px', marginTop: '4px' }}>Medicines running below their designated minimum threshold level requiring urgent purchase reorders</p>
+        <p style={{ color: '#64748b', fontSize: '14px', marginTop: '4px' }}>Medicines running below their designated minimum threshold level requiring urgent purchase reorders</p>
       </div>
 
       <div className="table-container">
@@ -85,13 +85,13 @@ export const LowStockAlerts = () => {
           </thead>
           <tbody>
             {loading ? (
-              <tr><td colSpan="7" style={{ textAlign: 'center', padding: '30px', color: '#94a3b8' }}>Checking inventory thresholds...</td></tr>
+              <tr><td colSpan="7" style={{ textAlign: 'center', padding: '30px', color: '#64748b' }}>Checking inventory thresholds...</td></tr>
             ) : lowStockItems.length === 0 ? (
               <tr>
                 <td colSpan="7" style={{ textAlign: 'center', padding: '40px' }}>
-                  <CheckCircle2 size={40} color="#10b981" style={{ display: 'block', margin: '0 auto 12px auto' }} />
-                  <div style={{ color: '#f8fafc', fontWeight: 700, fontSize: '16px' }}>All Inventory Levels Are Healthy!</div>
-                  <div style={{ color: '#94a3b8', fontSize: '14px', marginTop: '4px' }}>No items are currently below minimum stock threshold.</div>
+                  <CheckCircle2 size={40} color="#059669" style={{ display: 'block', margin: '0 auto 12px auto' }} />
+                  <div style={{ color: '#1e293b', fontWeight: 700, fontSize: '16px' }}>All Inventory Levels Are Healthy!</div>
+                  <div style={{ color: '#64748b', fontSize: '14px', marginTop: '4px' }}>No items are currently below minimum stock threshold.</div>
                 </td>
               </tr>
             ) : (
@@ -100,19 +100,19 @@ export const LowStockAlerts = () => {
                 return (
                   <tr key={item.id}>
                     <td>
-                      <div style={{ fontWeight: 700, color: '#f8fafc' }}>{item.medicineName}</div>
-                      <div style={{ fontSize: '12px', color: '#38bdf8' }}>{item.medicineCode}</div>
+                      <div style={{ fontWeight: 700, color: '#1e293b' }}>{item.medicineName}</div>
+                      <div style={{ fontSize: '12px', color: '#0284c7' }}>{item.medicineCode}</div>
                     </td>
-                    <td style={{ color: '#cbd5e1' }}>{item.category || 'General'}</td>
+                    <td style={{ color: '#475569' }}>{item.category || 'General'}</td>
                     <td>
-                      <span style={{ fontSize: '16px', fontWeight: 800, color: item.quantity === 0 ? '#ef4444' : '#f59e0b' }}>
+                      <span style={{ fontSize: '16px', fontWeight: 800, color: item.quantity === 0 ? '#dc2626' : '#d97706' }}>
                         {item.quantity} units
                       </span>
                     </td>
-                    <td style={{ color: '#cbd5e1' }}>{item.minimumStock} units</td>
-                    <td style={{ color: '#ef4444', fontWeight: 800 }}>-{deficit > 0 ? deficit : 1} units</td>
+                    <td style={{ color: '#475569' }}>{item.minimumStock} units</td>
+                    <td style={{ color: '#dc2626', fontWeight: 800 }}>-{deficit > 0 ? deficit : 1} units</td>
                     <td>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '13px', color: '#cbd5e1' }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '13px', color: '#475569' }}>
                         <MapPin size={14} color="#14b8a6" /> {item.location || 'Main Shelf'}
                       </div>
                     </td>
@@ -140,15 +140,15 @@ export const LowStockAlerts = () => {
       {/* Restock Modal */}
       <Modal isOpen={isRestockModalOpen} onClose={() => setIsRestockModalOpen(false)} title="Restock Medicine Inventory">
         <form onSubmit={handleConfirmRestock} style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-          <div style={{ background: '#0f172a', padding: '16px', borderRadius: '12px', border: '1px solid #334155' }}>
-            <div style={{ fontSize: '16px', fontWeight: 700, color: '#38bdf8' }}>{selectedRestockItem?.medicineName}</div>
-            <div style={{ fontSize: '13px', color: '#cbd5e1', marginTop: '4px' }}>
+          <div style={{ background: '#f8fafc', padding: '16px', borderRadius: '12px', border: '1px solid #e2e8f0' }}>
+            <div style={{ fontSize: '16px', fontWeight: 700, color: '#0284c7' }}>{selectedRestockItem?.medicineName}</div>
+            <div style={{ fontSize: '13px', color: '#475569', marginTop: '4px' }}>
               Current Stock: <strong>{selectedRestockItem?.quantity}</strong> units | Min Threshold: <strong>{selectedRestockItem?.minimumStock}</strong> units
             </div>
           </div>
 
           <div>
-            <label style={{ display: 'block', fontSize: '13px', fontWeight: 600, color: '#cbd5e1', marginBottom: '6px' }}>
+            <label style={{ display: 'block', fontSize: '13px', fontWeight: 600, color: '#475569', marginBottom: '6px' }}>
               Restock Quantity to Add
             </label>
             <input
@@ -163,7 +163,7 @@ export const LowStockAlerts = () => {
           </div>
 
           <div>
-            <label style={{ display: 'block', fontSize: '13px', fontWeight: 600, color: '#cbd5e1', marginBottom: '6px' }}>
+            <label style={{ display: 'block', fontSize: '13px', fontWeight: 600, color: '#475569', marginBottom: '6px' }}>
               Restock Purchase Remarks
             </label>
             <input

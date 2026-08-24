@@ -49,8 +49,8 @@ export const StockHistory = () => {
     <div>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '28px', flexWrap: 'wrap', gap: '16px' }}>
         <div>
-          <h1 style={{ fontSize: '24px', fontWeight: 800, color: '#f8fafc' }}>Stock Audit Logs & History</h1>
-          <p style={{ color: '#94a3b8', fontSize: '14px', marginTop: '4px' }}>Immutable audit trail tracking all inventory stock movements, user actions, and balance adjustments</p>
+          <h1 style={{ fontSize: '24px', fontWeight: 800, color: '#1e293b' }}>Stock Audit Logs & History</h1>
+          <p style={{ color: '#64748b', fontSize: '14px', marginTop: '4px' }}>Immutable audit trail tracking all inventory stock movements, user actions, and balance adjustments</p>
         </div>
         <div>
           <button onClick={exportCSV} className="btn btn-secondary">
@@ -61,18 +61,19 @@ export const StockHistory = () => {
 
       {/* Filter Bar */}
       <div style={{
-        background: '#1e293b',
-        border: '1px solid #334155',
+        background: '#ffffff',
+        border: '1px solid #e2e8f0',
         borderRadius: '12px',
         padding: '16px 20px',
         marginBottom: '24px',
         display: 'flex',
         gap: '16px',
         flexWrap: 'wrap',
-        alignItems: 'center'
+        alignItems: 'center',
+        boxShadow: '0 1px 3px rgba(0,0,0,0.04)'
       }}>
         <div style={{ width: '220px' }}>
-          <label style={{ display: 'block', fontSize: '12px', color: '#94a3b8', marginBottom: '4px' }}>Filter by Action Type</label>
+          <label style={{ display: 'block', fontSize: '12px', color: '#64748b', marginBottom: '4px', fontWeight: 600 }}>Filter by Action Type</label>
           <select
             value={actionTypeFilter}
             onChange={(e) => { setActionTypeFilter(e.target.value); setPage(0); }}
@@ -102,21 +103,21 @@ export const StockHistory = () => {
           </thead>
           <tbody>
             {loading ? (
-              <tr><td colSpan="7" style={{ textAlign: 'center', padding: '30px', color: '#94a3b8' }}>Loading stock logs...</td></tr>
+              <tr><td colSpan="7" style={{ textAlign: 'center', padding: '30px', color: '#64748b' }}>Loading stock logs...</td></tr>
             ) : logs.length === 0 ? (
-              <tr><td colSpan="7" style={{ textAlign: 'center', padding: '30px', color: '#94a3b8' }}>No audit log records found.</td></tr>
+              <tr><td colSpan="7" style={{ textAlign: 'center', padding: '30px', color: '#64748b' }}>No audit log records found.</td></tr>
             ) : (
               logs.map((log) => (
                 <tr key={log.id}>
-                  <td style={{ color: '#94a3b8', fontSize: '13px', whiteSpace: 'nowrap' }}>
+                  <td style={{ color: '#64748b', fontSize: '13px', whiteSpace: 'nowrap' }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                      <Calendar size={13} color="#38bdf8" />
+                      <Calendar size={13} color="#0284c7" />
                       {new Date(log.createdAt).toLocaleString()}
                     </div>
                   </td>
                   <td>
-                    <div style={{ fontWeight: 700, color: '#f8fafc' }}>{log.medicineName || `Medicine #${log.medicineId}`}</div>
-                    <div style={{ fontSize: '12px', color: '#38bdf8' }}>{log.medicineCode}</div>
+                    <div style={{ fontWeight: 700, color: '#1e293b' }}>{log.medicineName || `Medicine #${log.medicineId}`}</div>
+                    <div style={{ fontSize: '12px', color: '#0284c7' }}>{log.medicineCode}</div>
                   </td>
                   <td>
                     <span className={`badge ${
@@ -127,10 +128,10 @@ export const StockHistory = () => {
                       {log.actionType}
                     </span>
                   </td>
-                  <td style={{ fontWeight: 800, color: log.actionType === 'IN' ? '#10b981' : (log.actionType === 'OUT' ? '#ef4444' : '#f59e0b') }}>
+                  <td style={{ fontWeight: 800, color: log.actionType === 'IN' ? '#059669' : (log.actionType === 'OUT' ? '#dc2626' : '#d97706') }}>
                     {log.actionType === 'IN' ? `+${log.quantity}` : (log.actionType === 'OUT' ? `-${log.quantity}` : `${log.quantity}`)} units
                   </td>
-                  <td style={{ fontSize: '13px', color: '#cbd5e1' }}>
+                  <td style={{ fontSize: '13px', color: '#475569' }}>
                     {log.previousQuantity !== undefined && log.newQuantity !== undefined ? (
                       <span>{log.previousQuantity} → <strong>{log.newQuantity}</strong></span>
                     ) : (
@@ -138,11 +139,11 @@ export const StockHistory = () => {
                     )}
                   </td>
                   <td>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '13px', color: '#cbd5e1' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '13px', color: '#475569' }}>
                       <User size={13} color="#14b8a6" /> {log.performedBy || 'System'}
                     </div>
                   </td>
-                  <td style={{ color: '#94a3b8', fontSize: '13px' }}>{log.remarks || '-'}</td>
+                  <td style={{ color: '#64748b', fontSize: '13px' }}>{log.remarks || '-'}</td>
                 </tr>
               ))
             )}

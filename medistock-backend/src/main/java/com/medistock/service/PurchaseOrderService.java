@@ -10,6 +10,8 @@ public interface PurchaseOrderService {
     PurchaseOrderDTO createPurchaseOrder(PurchaseOrderCreateRequest request);
     PageResponse<PurchaseOrderDTO> getAllPurchaseOrders(OrderStatus status, Long supplierId, Pageable pageable);
     PurchaseOrderDTO getPurchaseOrderById(Long id);
-    PurchaseOrderDTO updateOrderStatus(Long id, OrderStatus newStatus, String updatedBy);
+    PurchaseOrderDTO updateOrderStatus(Long id, OrderStatus status, String updatedBy);
+    PageResponse<PurchaseOrderDTO> getOrdersBySupplier(Long supplierId, Pageable pageable);
+    PurchaseOrderDTO shipOrder(Long orderId, String trackingDetails, Long supplierUserId);
     void cancelPurchaseOrder(Long id);
 }

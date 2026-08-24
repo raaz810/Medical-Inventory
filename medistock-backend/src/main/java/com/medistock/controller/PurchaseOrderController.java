@@ -73,6 +73,17 @@ public class PurchaseOrderController {
         return ResponseEntity.ok(ApiResponse.success(updated, "Purchase order status updated successfully"));
     }
 
+    @PutMapping("/{id}/ship")
+    @Operation(summary = "Ship Order (Supplier)", description = "Supplier marks order as SHIPPED and provides shipping tracking info")
+    public ResponseEntity<ApiResponse<PurchaseOrderDTO>> shipOrder(
+            @PathVariable Long id,
+            @RequestParam(required = false) String trackingDetails,
+            Authentication authentication
+    ) {
+        PurchaseOrderDTO shipped = purchaseOrderService.shipOrder(id, trackingDetails, null);
+        return ResponseEntity.ok(ApiResponse.success(shipped, "Order marked as SHIPPED"));
+    }
+
     @DeleteMapping("/{id}")
     @Operation(summary = "Cancel Purchase Order", description = "Cancel pending purchase order")
     public ResponseEntity<ApiResponse<Void>> cancelPurchaseOrder(@PathVariable Long id) {

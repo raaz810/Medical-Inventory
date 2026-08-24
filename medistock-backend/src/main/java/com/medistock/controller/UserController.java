@@ -2,8 +2,10 @@ package com.medistock.controller;
 
 import com.medistock.dto.ApiResponse;
 import com.medistock.dto.PageResponse;
+import com.medistock.dto.RegisterRequest;
 import com.medistock.dto.UserDTO;
 import com.medistock.dto.UserUpdateRequest;
+import com.medistock.service.AuthService;
 import com.medistock.service.UserService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -11,6 +13,7 @@ import jakarta.validation.Valid;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.Authentication;
@@ -22,13 +25,15 @@ import org.springframework.web.bind.annotation.*;
 public class UserController {
 
     private final UserService userService;
+    private final AuthService authService;
 
-    public UserController(UserService userService) {
+    public UserController(UserService userService, AuthService authService) {
         this.userService = userService;
+        this.authService = authService;
     }
 
     @GetMapping
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("isAuthenticated()")
     @Operation(summary = "Get All Users", description = "Paginated search & retrieval of users")
     public ResponseEntity<ApiResponse<PageResponse<UserDTO>>> getAllUsers(
             @RequestParam(required = false) String search,
@@ -41,6 +46,15 @@ public class UserController {
         Pageable pageable = PageRequest.of(page, size, sort);
         PageResponse<UserDTO> users = userService.getAllUsers(search, pageable);
         return ResponseEntity.ok(ApiResponse.success(users));
+    }
+
+    @PostMapping
+    @PreAuthorize("hasRole('ADMIN')")
+    @Operation(summary = "Create User", description = "Admin creates a new user with assigned role")
+    public ResponseEntity<ApiResponse<UserDTO>> createUser(@Valid @RequestBody RegisterRequest request) {
+        UserDTO user = authService.register(request);
+        return ResponseEntity.status(HttpStatus.CREATED)
+                .body(ApiResponse.success(user, "User created successfully"));
     }
 
     @GetMapping("/me")

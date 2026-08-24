@@ -1,16 +1,19 @@
 package com.medistock.service.impl;
 
 import com.medistock.dto.ExpiryTrackingDTO;
+import com.medistock.dto.ExpiryTrackingSummaryDTO;
 import com.medistock.dto.PageResponse;
 import com.medistock.entity.ExpiryTracking;
 import com.medistock.entity.Medicine;
 import com.medistock.enums.ExpiryStatus;
+import com.medistock.enums.NotificationSeverity;
 import com.medistock.enums.NotificationType;
 import com.medistock.exception.ResourceNotFoundException;
 import com.medistock.repository.ExpiryTrackingRepository;
 import com.medistock.repository.MedicineRepository;
 import com.medistock.service.ExpiryTrackingService;
 import com.medistock.service.NotificationService;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.scheduling.annotation.Scheduled;
@@ -26,6 +29,9 @@ public class ExpiryTrackingServiceImpl implements ExpiryTrackingService {
     private final ExpiryTrackingRepository expiryTrackingRepository;
     private final MedicineRepository medicineRepository;
     private final NotificationService notificationService;
+
+    @Value("${medistock.expiry.threshold-days:30}")
+    private int thresholdDays = 30;
 
     public ExpiryTrackingServiceImpl(ExpiryTrackingRepository expiryTrackingRepository, MedicineRepository medicineRepository, NotificationService notificationService) {
         this.expiryTrackingRepository = expiryTrackingRepository;
@@ -52,11 +58,16 @@ public class ExpiryTrackingServiceImpl implements ExpiryTrackingService {
         ExpiryTracking saved = expiryTrackingRepository.save(tracking);
 
         if (computedStatus == ExpiryStatus.EXPIRING_SOON || computedStatus == ExpiryStatus.EXPIRED) {
+            NotificationSeverity severity = computedStatus == ExpiryStatus.EXPIRED ? NotificationSeverity.CRITICAL : NotificationSeverity.WARNING;
+            NotificationType type = computedStatus == ExpiryStatus.EXPIRED ? NotificationType.EXPIRED_MEDICINE : NotificationType.EXPIRING_SOON;
+
             notificationService.createNotification(
                     "Expiry Alert: " + medicine.getMedicineName(),
                     "Batch " + saved.getBatchNumber() + " for " + medicine.getMedicineName() +
                             " is " + computedStatus.name() + " (Expiry Date: " + saved.getExpiryDate() + ")",
-                    NotificationType.EXPIRY_ALERT
+                    type,
+                    severity,
+                    medicine.getId()
             );
         }
 
@@ -110,6 +121,14 @@ public class ExpiryTrackingServiceImpl implements ExpiryTrackingService {
 
     @Override
     @Transactional(readOnly = true)
+    public List<ExpiryTrackingDTO> getExpiryRecordsByMedicineIdList(Long medicineId) {
+        return expiryTrackingRepository.findByMedicineId(medicineId).stream()
+                .map(this::mapToDTO)
+                .toList();
+    }
+
+    @Override
+    @Transactional(readOnly = true)
     public List<ExpiryTrackingDTO> getExpiringSoon() {
         return expiryTrackingRepository.findByStatus(ExpiryStatus.EXPIRING_SOON).stream()
                 .map(this::mapToDTO)
@@ -125,7 +144,28 @@ public class ExpiryTrackingServiceImpl implements ExpiryTrackingService {
     }
 
     @Override
-    @Scheduled(cron = "0 0 1 * * ?") // Run every day at 1:00 AM
+    @Transactional(readOnly = true)
+    public ExpiryTrackingSummaryDTO getExpirySummary() {
+        long total = expiryTrackingRepository.count();
+        long expiredCount = expiryTrackingRepository.countByStatus(ExpiryStatus.EXPIRED);
+        long expiringSoonCount = expiryTrackingRepository.countByStatus(ExpiryStatus.EXPIRING_SOON);
+        long activeCount = expiryTrackingRepository.countByStatus(ExpiryStatus.ACTIVE);
+
+        long expiredQty = expiryTrackingRepository.sumQuantityByStatus(ExpiryStatus.EXPIRED);
+        long expiringSoonQty = expiryTrackingRepository.sumQuantityByStatus(ExpiryStatus.EXPIRING_SOON);
+
+        return ExpiryTrackingSummaryDTO.builder()
+                .totalRecords(total)
+                .expiredCount(expiredCount)
+                .expiringSoonCount(expiringSoonCount)
+                .activeCount(activeCount)
+                .expiredQuantity(expiredQty)
+                .expiringSoonQuantity(expiringSoonQty)
+                .build();
+    }
+
+    @Override
+    @Scheduled(cron = "${medistock.scheduler.expiry-cron:0 0 1 * * ?}") // Configurable cron
     @Transactional
     public void updateExpiryStatuses() {
         List<ExpiryTracking> records = expiryTrackingRepository.findAll();
@@ -139,11 +179,16 @@ public class ExpiryTrackingServiceImpl implements ExpiryTrackingService {
                 expiryTrackingRepository.save(record);
 
                 if (updatedStatus == ExpiryStatus.EXPIRED || updatedStatus == ExpiryStatus.EXPIRING_SOON) {
+                    NotificationSeverity severity = updatedStatus == ExpiryStatus.EXPIRED ? NotificationSeverity.CRITICAL : NotificationSeverity.WARNING;
+                    NotificationType type = updatedStatus == ExpiryStatus.EXPIRED ? NotificationType.EXPIRED_MEDICINE : NotificationType.EXPIRING_SOON;
+
                     notificationService.createNotification(
                             "Scheduled Expiry Alert: " + record.getMedicine().getMedicineName(),
                             "Medicine " + record.getMedicine().getMedicineName() + " (Batch: " +
                                     record.getBatchNumber() + ") marked as " + updatedStatus.name() + ".",
-                            NotificationType.EXPIRY_ALERT
+                            type,
+                            severity,
+                            record.getMedicine().getId()
                     );
                 }
             }
@@ -158,14 +203,14 @@ public class ExpiryTrackingServiceImpl implements ExpiryTrackingService {
 
     private ExpiryStatus calculateStatus(LocalDate expiryDate) {
         LocalDate today = LocalDate.now();
-        if (expiryDate == null) return ExpiryStatus.SAFE;
+        if (expiryDate == null) return ExpiryStatus.ACTIVE;
 
         if (expiryDate.isBefore(today) || expiryDate.isEqual(today)) {
             return ExpiryStatus.EXPIRED;
-        } else if (expiryDate.isBefore(today.plusDays(30))) {
+        } else if (expiryDate.isBefore(today.plusDays(thresholdDays))) {
             return ExpiryStatus.EXPIRING_SOON;
         } else {
-            return ExpiryStatus.SAFE;
+            return ExpiryStatus.ACTIVE;
         }
     }
 
@@ -183,3 +228,4 @@ public class ExpiryTrackingServiceImpl implements ExpiryTrackingService {
                 .build();
     }
 }
+

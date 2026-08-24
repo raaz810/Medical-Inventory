@@ -76,3 +76,5 @@ export const ToastProvider = ({ children }) => {
     </ToastContext.Provider>
   );
 };
+
+export const useToast = () => React.useContext(ToastContext);

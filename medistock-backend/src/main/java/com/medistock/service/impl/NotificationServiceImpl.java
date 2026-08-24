@@ -3,6 +3,7 @@ package com.medistock.service.impl;
 import com.medistock.dto.NotificationDTO;
 import com.medistock.dto.PageResponse;
 import com.medistock.entity.Notification;
+import com.medistock.enums.NotificationSeverity;
 import com.medistock.enums.NotificationType;
 import com.medistock.exception.ResourceNotFoundException;
 import com.medistock.repository.NotificationRepository;
@@ -12,6 +13,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDateTime;
 import java.util.List;
 
 @Service
@@ -24,17 +26,34 @@ public class NotificationServiceImpl implements NotificationService {
     }
 
     @Override
-    @Transactional
+    @Transactional(propagation = org.springframework.transaction.annotation.Propagation.REQUIRES_NEW)
     public NotificationDTO createNotification(String title, String message, NotificationType type) {
+        return createNotification(title, message, type, NotificationSeverity.INFO, null);
+    }
+
+    @Override
+    @Transactional(propagation = org.springframework.transaction.annotation.Propagation.REQUIRES_NEW)
+    public NotificationDTO createNotification(String title, String message, NotificationType type, NotificationSeverity severity, Long relatedMedicineId) {
+        // Prevent duplicate UNREAD notifications for the same medicine and type
+        if (relatedMedicineId != null && notificationRepository.existsByNotificationTypeAndRelatedMedicineIdAndStatus(type, relatedMedicineId, "UNREAD")) {
+            return null;
+        }
+
         Notification notification = Notification.builder()
                 .title(title)
                 .message(message)
                 .notificationType(type)
+                .severity(severity != null ? severity : NotificationSeverity.INFO)
+                .relatedMedicineId(relatedMedicineId)
                 .status("UNREAD")
                 .build();
 
-        Notification saved = notificationRepository.save(notification);
-        return mapToDTO(saved);
+        try {
+            Notification saved = notificationRepository.save(notification);
+            return mapToDTO(saved);
+        } catch (Exception e) {
+            return mapToDTO(notification);
+        }
     }
 
     @Override
@@ -58,6 +77,7 @@ public class NotificationServiceImpl implements NotificationService {
                 .orElseThrow(() -> new ResourceNotFoundException("Notification", "id", id));
 
         notification.setStatus("READ");
+        notification.setReadAt(LocalDateTime.now());
         Notification updated = notificationRepository.save(notification);
         return mapToDTO(updated);
     }
@@ -65,12 +85,16 @@ public class NotificationServiceImpl implements NotificationService {
     @Override
     @Transactional
     public void markAllAsRead() {
-        List<Notification> unreadList = notificationRepository.findAll().stream()
-                .filter(n -> "UNREAD".equalsIgnoreCase(n.getStatus()))
-                .toList();
+        notificationRepository.markAllUnreadAsRead();
+    }
 
-        unreadList.forEach(n -> n.setStatus("READ"));
-        notificationRepository.saveAll(unreadList);
+    @Override
+    @Transactional
+    public void deleteNotification(Long id) {
+        if (!notificationRepository.existsById(id)) {
+            throw new ResourceNotFoundException("Notification", "id", id);
+        }
+        notificationRepository.deleteById(id);
     }
 
     @Override
@@ -101,8 +125,12 @@ public class NotificationServiceImpl implements NotificationService {
                 .title(notification.getTitle())
                 .message(notification.getMessage())
                 .notificationType(notification.getNotificationType())
+                .severity(notification.getSeverity())
+                .relatedMedicineId(notification.getRelatedMedicineId())
                 .status(notification.getStatus())
                 .createdAt(notification.getCreatedAt())
+                .readAt(notification.getReadAt())
                 .build();
     }
 }
+

@@ -9,6 +9,9 @@ export const StockManagement = () => {
   const [currentInventory, setCurrentInventory] = useState(null);
   const [actionType, setActionType] = useState('IN'); // IN, OUT, ADJUSTMENT
   const [quantity, setQuantity] = useState(10);
+  const [batchNumber, setBatchNumber] = useState('');
+  const [expiryDate, setExpiryDate] = useState('');
+  const [location, setLocation] = useState('Main Pharmacy Shelf A');
   const [remarks, setRemarks] = useState('');
   const [loading, setLoading] = useState(false);
 
@@ -29,11 +32,23 @@ export const StockManagement = () => {
   const fetchMedicines = async () => {
     try {
       const res = await API.get('/api/medicines', { params: { size: 100 } });
-      setMedicines(res.data.data.content || []);
-      if (res.data.data.content?.length > 0) {
-        setSelectedMedicineId(res.data.data.content[0].id);
+      const data = res.data?.data;
+      let list = [];
+      if (Array.isArray(data)) {
+        list = data;
+      } else if (data?.content && Array.isArray(data.content)) {
+        list = data.content;
+      } else if (Array.isArray(res.data)) {
+        list = res.data;
+      } else if (res.data?.content && Array.isArray(res.data.content)) {
+        list = res.data.content;
+      }
+      setMedicines(list);
+      if (list.length > 0) {
+        setSelectedMedicineId(list[0].id);
       }
     } catch (err) {
+      console.error('Fetch medicines error:', err);
       toast.error('Failed to load medicine list');
     }
   };
@@ -41,7 +56,7 @@ export const StockManagement = () => {
   const fetchMedicineInventory = async (medId) => {
     try {
       const res = await API.get(`/api/inventory/medicine/${medId}`);
-      setCurrentInventory(res.data.data);
+      setCurrentInventory(res.data?.data || res.data);
     } catch (err) {
       setCurrentInventory(null);
     }
@@ -67,6 +82,10 @@ export const StockManagement = () => {
       await API.post(endpoint, {
         medicineId: Number(selectedMedicineId),
         quantity: Number(quantity),
+        batchNumber,
+        expiryDate,
+        location,
+        storageLocation: location,
         remarks: remarks || `Manual Stock ${actionType} performed via Stock Portal`
       });
 
@@ -89,16 +108,16 @@ export const StockManagement = () => {
   return (
     <div style={{ maxWidth: '800px', margin: '0 auto' }}>
       <div style={{ marginBottom: '28px' }}>
-        <h1 style={{ fontSize: '24px', fontWeight: 800, color: '#f8fafc' }}>Stock Operations Portal</h1>
-        <p style={{ color: '#94a3b8', fontSize: '14px', marginTop: '4px' }}>Execute Stock IN (Purchase/Received), Stock OUT (Dispensed/Sales), or Inventory Adjustments</p>
+        <h1 style={{ fontSize: '24px', fontWeight: 800, color: '#1e293b' }}>Stock Operations Portal</h1>
+        <p style={{ color: '#64748b', fontSize: '14px', marginTop: '4px' }}>Execute Stock IN (Purchase/Received), Stock OUT (Dispensed/Sales), or Inventory Adjustments</p>
       </div>
 
       <div style={{
-        background: '#1e293b',
-        border: '1px solid #334155',
+        background: '#ffffff',
+        border: '1px solid #e2e8f0',
         borderRadius: '20px',
         padding: '32px',
-        boxShadow: '0 20px 25px -5px rgba(0,0,0,0.5)'
+        boxShadow: '0 4px 15px rgba(0,0,0,0.05)'
       }}>
         {/* Action Type Selector */}
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '12px', marginBottom: '28px' }}>
@@ -108,7 +127,7 @@ export const StockManagement = () => {
             className={`btn ${actionType === 'IN' ? 'btn-primary' : 'btn-secondary'}`}
             style={{ justifyContent: 'center', padding: '14px', borderRadius: '12px' }}
           >
-            <ArrowUpRight size={18} color="#10b981" /> Stock IN (+)
+            <ArrowUpRight size={18} color="#059669" /> Stock IN (+)
           </button>
           <button
             type="button"
@@ -116,21 +135,21 @@ export const StockManagement = () => {
             className={`btn ${actionType === 'OUT' ? 'btn-danger' : 'btn-secondary'}`}
             style={{ justifyContent: 'center', padding: '14px', borderRadius: '12px' }}
           >
-            <ArrowDownRight size={18} color="#ef4444" /> Stock OUT (-)
+            <ArrowDownRight size={18} color="#dc2626" /> Stock OUT (-)
           </button>
           <button
             type="button"
             onClick={() => setActionType('ADJUSTMENT')}
             className={`btn ${actionType === 'ADJUSTMENT' ? 'btn-primary' : 'btn-secondary'}`}
-            style={{ justifyContent: 'center', padding: '14px', borderRadius: '12px', background: actionType === 'ADJUSTMENT' ? '#f59e0b' : '' }}
+            style={{ justifyContent: 'center', padding: '14px', borderRadius: '12px', background: actionType === 'ADJUSTMENT' ? '#d97706' : '' }}
           >
-            <RefreshCw size={18} color="#f59e0b" /> Set Exact Stock
+            <RefreshCw size={18} color="#d97706" /> Set Exact Stock
           </button>
         </div>
 
         <form onSubmit={handleExecuteStockOp} style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
           <div>
-            <label style={{ display: 'block', fontSize: '13px', fontWeight: 600, color: '#cbd5e1', marginBottom: '8px' }}>
+            <label style={{ display: 'block', fontSize: '13px', fontWeight: 600, color: '#475569', marginBottom: '8px' }}>
               Select Medicine
             </label>
             <select
@@ -149,8 +168,8 @@ export const StockManagement = () => {
 
           {/* Current vs Projected Live Preview */}
           <div style={{
-            background: '#0f172a',
-            border: '1px solid #334155',
+            background: '#f8fafc',
+            border: '1px solid #e2e8f0',
             borderRadius: '16px',
             padding: '20px',
             display: 'grid',
@@ -158,17 +177,17 @@ export const StockManagement = () => {
             gap: '16px'
           }}>
             <div>
-              <div style={{ fontSize: '12px', color: '#94a3b8', textTransform: 'uppercase', fontWeight: 600 }}>Current Stock Qty</div>
-              <div style={{ fontSize: '24px', fontWeight: 800, color: '#f8fafc', marginTop: '4px' }}>
+              <div style={{ fontSize: '12px', color: '#64748b', textTransform: 'uppercase', fontWeight: 600 }}>Current Stock Qty</div>
+              <div style={{ fontSize: '24px', fontWeight: 800, color: '#1e293b', marginTop: '4px' }}>
                 {currentQty} units
               </div>
             </div>
             <div>
-              <div style={{ fontSize: '12px', color: '#94a3b8', textTransform: 'uppercase', fontWeight: 600 }}>Projected New Stock</div>
+              <div style={{ fontSize: '12px', color: '#64748b', textTransform: 'uppercase', fontWeight: 600 }}>Projected New Stock</div>
               <div style={{
                 fontSize: '24px',
                 fontWeight: 800,
-                color: actionType === 'IN' ? '#10b981' : (actionType === 'OUT' ? '#ef4444' : '#f59e0b'),
+                color: actionType === 'IN' ? '#059669' : (actionType === 'OUT' ? '#dc2626' : '#d97706'),
                 marginTop: '4px'
               }}>
                 {projectedQty} units
@@ -176,9 +195,9 @@ export const StockManagement = () => {
             </div>
           </div>
 
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 2fr', gap: '16px' }}>
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '16px' }}>
             <div>
-              <label style={{ display: 'block', fontSize: '13px', fontWeight: 600, color: '#cbd5e1', marginBottom: '8px' }}>
+              <label style={{ display: 'block', fontSize: '13px', fontWeight: 600, color: '#475569', marginBottom: '8px' }}>
                 Quantity
               </label>
               <input
@@ -192,7 +211,45 @@ export const StockManagement = () => {
               />
             </div>
             <div>
-              <label style={{ display: 'block', fontSize: '13px', fontWeight: 600, color: '#cbd5e1', marginBottom: '8px' }}>
+              <label style={{ display: 'block', fontSize: '13px', fontWeight: 600, color: '#475569', marginBottom: '8px' }}>
+                Batch Number
+              </label>
+              <input
+                type="text"
+                value={batchNumber}
+                onChange={(e) => setBatchNumber(e.target.value)}
+                className="input-field"
+                placeholder="e.g. BATCH-99201"
+              />
+            </div>
+            <div>
+              <label style={{ display: 'block', fontSize: '13px', fontWeight: 600, color: '#475569', marginBottom: '8px' }}>
+                Expiry Date
+              </label>
+              <input
+                type="date"
+                value={expiryDate}
+                onChange={(e) => setExpiryDate(e.target.value)}
+                className="input-field"
+              />
+            </div>
+          </div>
+
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
+            <div>
+              <label style={{ display: 'block', fontSize: '13px', fontWeight: 600, color: '#475569', marginBottom: '8px' }}>
+                Storage Location
+              </label>
+              <input
+                type="text"
+                value={location}
+                onChange={(e) => setLocation(e.target.value)}
+                className="input-field"
+                placeholder="e.g. Shelf A-12"
+              />
+            </div>
+            <div>
+              <label style={{ display: 'block', fontSize: '13px', fontWeight: 600, color: '#475569', marginBottom: '8px' }}>
                 Reason / Audit Remarks
               </label>
               <input

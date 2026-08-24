@@ -12,10 +12,10 @@ export const Modal = ({ isOpen, onClose, title, children, maxWidth = '600px' }) 
         onClick={(e) => e.stopPropagation()}
       >
         <div className="modal-header">
-          <h3 style={{ fontSize: '18px', fontWeight: 700, color: '#f8fafc' }}>{title}</h3>
+          <h3 style={{ fontSize: '18px', fontWeight: 700, color: '#1e293b' }}>{title}</h3>
           <button
             onClick={onClose}
-            style={{ background: 'none', border: 'none', color: '#94a3b8', cursor: 'pointer' }}
+            style={{ background: 'none', border: 'none', color: '#64748b', cursor: 'pointer' }}
           >
             <X size={20} />
           </button>

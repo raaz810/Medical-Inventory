@@ -65,6 +65,11 @@ public class ExpiryTrackingDTO {
     public ExpiryStatus getStatus() { return status; }
     public void setStatus(ExpiryStatus status) { this.status = status; }
 
+    public Long getDaysRemaining() {
+        if (expiryDate == null) return null;
+        return java.time.temporal.ChronoUnit.DAYS.between(LocalDate.now(), expiryDate);
+    }
+
     public LocalDateTime getCreatedAt() { return createdAt; }
     public void setCreatedAt(LocalDateTime createdAt) { this.createdAt = createdAt; }
 

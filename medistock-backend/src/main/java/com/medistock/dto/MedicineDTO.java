@@ -32,6 +32,9 @@ public class MedicineDTO {
     private String description;
     private Long supplierId;
     private String supplierName;
+    private Integer quantity;
+    private Integer minimumStock;
+    private Integer maximumStock;
     private LocalDateTime createdAt;
 
     public MedicineDTO() {}
@@ -87,6 +90,15 @@ public class MedicineDTO {
 
     public String getSupplierName() { return supplierName; }
     public void setSupplierName(String supplierName) { this.supplierName = supplierName; }
+
+    public Integer getQuantity() { return quantity; }
+    public void setQuantity(Integer quantity) { this.quantity = quantity; }
+
+    public Integer getMinimumStock() { return minimumStock; }
+    public void setMinimumStock(Integer minimumStock) { this.minimumStock = minimumStock; }
+
+    public Integer getMaximumStock() { return maximumStock; }
+    public void setMaximumStock(Integer maximumStock) { this.maximumStock = maximumStock; }
 
     public LocalDateTime getCreatedAt() { return createdAt; }
     public void setCreatedAt(LocalDateTime createdAt) { this.createdAt = createdAt; }

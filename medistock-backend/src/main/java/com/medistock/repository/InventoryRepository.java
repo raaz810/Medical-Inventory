@@ -29,6 +29,22 @@ public interface InventoryRepository extends JpaRepository<Inventory, Long> {
     @Query("SELECT SUM(i.quantity * i.medicine.unitPrice) FROM Inventory i")
     Double getTotalInventoryValue();
 
-    @Query("SELECT COUNT(i) FROM Inventory i WHERE i.quantity < i.minimumStock")
+    @Query("SELECT COUNT(i) FROM Inventory i WHERE i.quantity > 0 AND i.quantity < i.minimumStock")
     long countLowStockItems();
+
+    @Query("SELECT COUNT(i) FROM Inventory i WHERE i.quantity >= i.minimumStock AND i.quantity > 0")
+    long countAvailableStockItems();
+
+    @Query("SELECT COUNT(i) FROM Inventory i WHERE i.quantity = 0")
+    long countOutOfStockItems();
+
+    @Query("SELECT COALESCE(SUM(i.quantity), 0) FROM Inventory i")
+    long sumTotalQuantity();
+
+    @Query("SELECT i FROM Inventory i WHERE i.quantity = 0")
+    Page<Inventory> findOutOfStockItems(Pageable pageable);
+
+    @Query("SELECT i FROM Inventory i WHERE i.quantity = 0")
+    List<Inventory> findOutOfStockItems();
+
 }

@@ -8,15 +8,15 @@ export const Pagination = ({ currentPage, totalPages, onPageChange, pageSize, on
     <div style={{
       display: 'flex',
       alignItems: 'center',
-      justify: 'space-between',
+      justifyContent: 'space-between',
       padding: '16px 24px',
-      borderTop: '1px solid #334155',
-      background: 'rgba(15, 23, 42, 0.4)',
+      borderTop: '1px solid #e2e8f0',
+      background: '#f8fafc',
       flexWrap: 'wrap',
       gap: '12px',
     }}>
       {pageSize && onPageSizeChange && (
-        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '13px', color: '#94a3b8' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '13px', color: '#64748b' }}>
           <span>Rows per page:</span>
           <select
             value={pageSize}

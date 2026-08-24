@@ -24,11 +24,34 @@ public interface MedicineRepository extends JpaRepository<Medicine, Long> {
            "LOWER(m.genericName) LIKE LOWER(CONCAT('%', :search, '%')) OR " +
            "LOWER(m.category) LIKE LOWER(CONCAT('%', :search, '%')) OR " +
            "LOWER(m.manufacturer) LIKE LOWER(CONCAT('%', :search, '%')) OR " +
+           "LOWER(m.batchNumber) LIKE LOWER(CONCAT('%', :search, '%')) OR " +
            "LOWER(m.supplier.supplierName) LIKE LOWER(CONCAT('%', :search, '%'))")
     Page<Medicine> searchMedicines(@Param("search") String search, Pageable pageable);
 
     Page<Medicine> findByCategory(String category, Pageable pageable);
 
-    @Query("SELECT DISTINCT m.category FROM Medicine m ORDER BY m.category")
+    Page<Medicine> findBySupplierId(Long supplierId, Pageable pageable);
+
+    @Query("SELECT m FROM Medicine m WHERE " +
+           "(:search = '' OR " +
+           " LOWER(m.medicineName) LIKE LOWER(CONCAT('%', :search, '%')) OR " +
+           " LOWER(m.medicineCode) LIKE LOWER(CONCAT('%', :search, '%')) OR " +
+           " LOWER(m.genericName) LIKE LOWER(CONCAT('%', :search, '%')) OR " +
+           " LOWER(m.manufacturer) LIKE LOWER(CONCAT('%', :search, '%')) OR " +
+           " LOWER(m.batchNumber) LIKE LOWER(CONCAT('%', :search, '%')) OR " +
+           " (m.supplier IS NOT NULL AND LOWER(m.supplier.supplierName) LIKE LOWER(CONCAT('%', :search, '%')))) " +
+           "AND (:category = '' OR m.category = :category) " +
+           "AND (:supplierId IS NULL OR m.supplier.id = :supplierId) " +
+           "AND (:batchNumber = '' OR LOWER(m.batchNumber) LIKE LOWER(CONCAT('%', :batchNumber, '%')))")
+    Page<Medicine> searchAndFilter(
+            @Param("search") String search,
+            @Param("category") String category,
+            @Param("supplierId") Long supplierId,
+            @Param("batchNumber") String batchNumber,
+            Pageable pageable);
+
+    @Query("SELECT DISTINCT m.category FROM Medicine m WHERE m.category IS NOT NULL ORDER BY m.category")
     List<String> findDistinctCategories();
+
+    List<Medicine> findBySupplierId(Long supplierId);
 }

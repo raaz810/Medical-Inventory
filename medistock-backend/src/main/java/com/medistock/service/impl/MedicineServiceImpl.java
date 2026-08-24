@@ -18,6 +18,8 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.StringUtils;
 
 import java.util.List;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 @Service
 public class MedicineServiceImpl implements MedicineService {
@@ -61,6 +63,86 @@ public class MedicineServiceImpl implements MedicineService {
 
     @Override
     @Transactional(readOnly = true)
+    public PageResponse<MedicineDTO> searchAndFilter(String search, String category, Long supplierId, String stockStatus, String batchNumber, Pageable pageable) {
+        Page<Medicine> medicinePage;
+        boolean hasSearch = StringUtils.hasText(search);
+        boolean hasCategory = StringUtils.hasText(category);
+        boolean hasSupplier = supplierId != null;
+        boolean hasBatch = StringUtils.hasText(batchNumber);
+
+        if (!hasSearch && !hasCategory && !hasBatch && hasSupplier) {
+            medicinePage = medicineRepository.findBySupplierId(supplierId, pageable);
+        } else if (!hasSearch && hasCategory && !hasBatch && !hasSupplier) {
+            medicinePage = medicineRepository.findByCategory(category, pageable);
+        } else if (hasSearch && !hasCategory && !hasBatch && !hasSupplier) {
+            medicinePage = medicineRepository.searchMedicines(search, pageable);
+        } else if (!hasSearch && !hasCategory && !hasBatch && !hasSupplier) {
+            medicinePage = medicineRepository.findAll(pageable);
+        } else {
+            medicinePage = medicineRepository.searchAndFilter(
+                    hasSearch ? search : "",
+                    hasCategory ? category : "",
+                    supplierId,
+                    hasBatch ? batchNumber : "",
+                    pageable
+            );
+        }
+
+        List<MedicineDTO> dtos = medicinePage.getContent().stream()
+                .map(this::mapToDTO)
+                .toList();
+
+        // Apply stock status filter in memory (requires inventory join)
+        if (StringUtils.hasText(stockStatus)) {
+            Set<Long> filteredMedicineIds = getFilteredMedicineIdsByStockStatus(stockStatus);
+            dtos = dtos.stream()
+                    .filter(dto -> filteredMedicineIds.contains(dto.getId()))
+                    .toList();
+        }
+
+        return PageResponse.<MedicineDTO>builder()
+                .content(dtos)
+                .pageNumber(medicinePage.getNumber())
+                .pageSize(medicinePage.getSize())
+                .totalElements(StringUtils.hasText(stockStatus) ? dtos.size() : medicinePage.getTotalElements())
+                .totalPages(medicinePage.getTotalPages())
+                .first(medicinePage.isFirst())
+                .last(medicinePage.isLast())
+                .build();
+    }
+
+    private Set<Long> getFilteredMedicineIdsByStockStatus(String stockStatus) {
+        List<Inventory> inventories;
+        switch (stockStatus.toUpperCase()) {
+            case "LOW_STOCK":
+            case "LOW":
+                inventories = inventoryRepository.findLowStockItems();
+                break;
+            case "OUT_OF_STOCK":
+            case "OUT":
+                inventories = inventoryRepository.findAll().stream()
+                        .filter(i -> i.getQuantity() != null && i.getQuantity() == 0)
+                        .toList();
+                break;
+            case "AVAILABLE":
+            case "IN_STOCK":
+                inventories = inventoryRepository.findAll().stream()
+                        .filter(i -> i.getQuantity() != null && i.getQuantity() > 0 &&
+                                     i.getQuantity() >= i.getMinimumStock())
+                        .toList();
+                break;
+            default:
+                return medicineRepository.findAll().stream()
+                        .map(Medicine::getId)
+                        .collect(Collectors.toSet());
+        }
+        return inventories.stream()
+                .map(inv -> inv.getMedicine().getId())
+                .collect(Collectors.toSet());
+    }
+
+    @Override
+    @Transactional(readOnly = true)
     public MedicineDTO getMedicineById(Long id) {
         Medicine medicine = medicineRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Medicine", "id", id));
@@ -94,6 +176,7 @@ public class MedicineServiceImpl implements MedicineService {
                 .genericName(dto.getGenericName())
                 .category(dto.getCategory())
                 .manufacturer(dto.getManufacturer())
+                .brand(StringUtils.hasText(dto.getManufacturer()) ? dto.getManufacturer() : "Generic")
                 .unitPrice(dto.getUnitPrice())
                 .sellingPrice(dto.getSellingPrice())
                 .batchNumber(dto.getBatchNumber())
@@ -140,6 +223,7 @@ public class MedicineServiceImpl implements MedicineService {
         medicine.setGenericName(dto.getGenericName());
         medicine.setCategory(dto.getCategory());
         medicine.setManufacturer(dto.getManufacturer());
+        medicine.setBrand(StringUtils.hasText(dto.getManufacturer()) ? dto.getManufacturer() : "Generic");
         medicine.setUnitPrice(dto.getUnitPrice());
         medicine.setSellingPrice(dto.getSellingPrice());
         medicine.setBatchNumber(dto.getBatchNumber());
@@ -166,7 +250,7 @@ public class MedicineServiceImpl implements MedicineService {
     }
 
     private MedicineDTO mapToDTO(Medicine medicine) {
-        return MedicineDTO.builder()
+        MedicineDTO dto = MedicineDTO.builder()
                 .id(medicine.getId())
                 .medicineCode(medicine.getMedicineCode())
                 .medicineName(medicine.getMedicineName())
@@ -181,5 +265,14 @@ public class MedicineServiceImpl implements MedicineService {
                 .supplierName(medicine.getSupplier() != null ? medicine.getSupplier().getSupplierName() : null)
                 .createdAt(medicine.getCreatedAt())
                 .build();
+
+        // Enrich with inventory quantity for display
+        inventoryRepository.findByMedicineId(medicine.getId()).ifPresent(inv -> {
+            dto.setQuantity(inv.getQuantity());
+            dto.setMinimumStock(inv.getMinimumStock());
+            dto.setMaximumStock(inv.getMaximumStock());
+        });
+
+        return dto;
     }
 }

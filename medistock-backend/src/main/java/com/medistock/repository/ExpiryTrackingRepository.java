@@ -25,4 +25,12 @@ public interface ExpiryTrackingRepository extends JpaRepository<ExpiryTracking, 
     List<ExpiryTracking> findExpiredBefore(@Param("date") LocalDate date);
 
     long countByStatus(ExpiryStatus status);
+
+    List<ExpiryTracking> findByMedicineId(Long medicineId);
+
+    java.util.Optional<ExpiryTracking> findByMedicineIdAndBatchNumber(Long medicineId, String batchNumber);
+
+    @Query("SELECT COALESCE(SUM(e.quantity), 0) FROM ExpiryTracking e WHERE e.status = :status")
+    long sumQuantityByStatus(@Param("status") ExpiryStatus status);
+
 }

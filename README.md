@@ -136,14 +136,18 @@ Application is configured to use PostgreSQL through `application.properties`.
 ### Backend
 
 ```bash
-cd backend
-./mvnw spring-boot:run
+cd medistock-backend
+mvn spring-boot:run
 ```
 
 Application URL:
-
 ```text
-http://localhost:8080
+http://localhost:8081
+```
+
+Swagger API Docs:
+```text
+http://localhost:8081/swagger-ui.html
 ```
 
 ---
@@ -151,54 +155,49 @@ http://localhost:8080
 ### Frontend
 
 ```bash
-cd frontend
+cd medistock-frontend
 npm install
 npm run dev
 ```
 
 Application URL:
-
 ```text
 http://localhost:5173
 ```
 
 ---
 
-## Completed Milestones
+## Default Login Credentials
 
-* Project documentation prepared.
-* GitHub repository configured.
-* Working on the `nallabhavitha` branch.
-* Spring Boot backend initialized.
-* React frontend initialized.
-* PostgreSQL database connected.
-* Maven build successful.
-* Spring Boot application running.
-* Frontend development environment configured.
+| Role | Email | Password | Access Level |
+| :--- | :--- | :--- | :--- |
+| **Admin** | `admin@medistock.com` | `admin123` | Full administrative control, user & inventory management |
+| **Staff** | `staff@medistock.com` | `password123` | Inventory viewing, medicine catalogue, stock history |
+| **Pharmacist** | `pharmacist@medistock.com` | `password123` | Point of Sale (POS), customer sales, prescriptions |
+| **Store Manager** | `store_manager@medistock.com` | `password123` | Stock In/Out, supplier orders, inventory adjustments |
+| **Supplier** | `supplier@medistock.com` | `password123` | Supplier portal, order fulfillment, shipping updates |
 
 ---
 
-## Upcoming Development
+## Completed Milestones & Feature Suite
 
-* JWT Authentication
-* User & Role Management
-* Medicine Management
-* Category Management
-* Batch Management
-* Supplier Management
-* Purchase Order Management
-* Inventory Tracking
-* Expiry Monitoring
-* Dashboard & Analytics
-* Notifications
-* Reports (PDF & Excel)
-* Docker Deployment
+* ✅ **JWT Authentication & Role-Based Access Control**: Secure login/registration with granular roles (`ADMIN`, `PHARMACIST`, `STORE_MANAGER`, `STAFF`, `SUPPLIER`).
+* ✅ **Medicine Inventory & Batch Management**: Complete CRUD, multi-criteria filtering, stock tracking, and batch control.
+* ✅ **Real-Time Stock Alerts & Auditing**: Low-stock threshold alerts, out-of-stock monitoring, and automated stock movement audit trails (`IN`, `OUT`, `ADJUSTMENT`).
+* ✅ **Automated Expiry Tracking**: Expiry date status automation (`ACTIVE`, `EXPIRING_SOON`, `EXPIRED`) with cron background checks.
+* ✅ **Supplier Management & Procurement**: Supplier directory, Purchase Orders (`PENDING`, `APPROVED`, `SHIPPED`, `RECEIVED`), shipment tracking, and isolated Supplier Portal.
+* ✅ **Customer & Prescription Management**: Customer registry, prescription image uploads, admin prescription verification, and order fulfillment.
+* ✅ **Point of Sale (POS) & Billing**: Walk-in and prescription sales recording, automatic stock deduction, itemized invoice generation.
+* ✅ **In-App Messaging & Communication**: Real-time communication between administrators, pharmacists, and suppliers linked to purchase orders.
+* ✅ **Executive Dashboard & Analytics**: Visual KPIs, inventory valuation, stock movement breakdowns, revenue trends, and supplier performance.
+* ✅ **Exportable System Reports**: One-click CSV exports for inventory, low stock, expired batches, audit trails, suppliers, and purchase orders.
+* ✅ **Comprehensive Postman API Collection**: Full v2.1.0 collection with automated JWT token extraction and request tests.
 
 ---
 
 ## Author
 
-**Nallabhavitha**
+**Nallabhavitha** & **Vishnu Yaragalla**
 
 ---
 

@@ -42,6 +42,10 @@ public class User {
     @JoinColumn(name = "role_id", nullable = false)
     private Role role;
 
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "supplier_id")
+    private Supplier supplier;
+
     public User() {}
 
     public User(Long id, String firstName, String lastName, String email, String password, String phone, String status, LocalDateTime createdAt, LocalDateTime updatedAt, Role role) {
@@ -112,6 +116,9 @@ public class User {
 
     public Role getRole() { return role; }
     public void setRole(Role role) { this.role = role; }
+
+    public Supplier getSupplier() { return supplier; }
+    public void setSupplier(Supplier supplier) { this.supplier = supplier; }
 
     public static UserBuilder builder() { return new UserBuilder(); }
 

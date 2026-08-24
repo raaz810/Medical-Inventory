@@ -65,6 +65,20 @@ public class ExpiryTrackingController {
         return ResponseEntity.ok(ApiResponse.success(list));
     }
 
+    @GetMapping("/summary")
+    @Operation(summary = "Get Expiry Summary Statistics", description = "Get counts and quantities of active, expiring soon, and expired medicines")
+    public ResponseEntity<ApiResponse<com.medistock.dto.ExpiryTrackingSummaryDTO>> getExpirySummary() {
+        com.medistock.dto.ExpiryTrackingSummaryDTO summary = expiryTrackingService.getExpirySummary();
+        return ResponseEntity.ok(ApiResponse.success(summary));
+    }
+
+    @GetMapping("/{medicineId}")
+    @Operation(summary = "Get Expiry Records by Medicine ID", description = "List expiry records for a specific medicine")
+    public ResponseEntity<ApiResponse<List<ExpiryTrackingDTO>>> getExpiryByMedicineId(@PathVariable Long medicineId) {
+        List<ExpiryTrackingDTO> list = expiryTrackingService.getExpiryRecordsByMedicineIdList(medicineId);
+        return ResponseEntity.ok(ApiResponse.success(list));
+    }
+
     @PostMapping("/trigger-check")
     @Operation(summary = "Trigger Manual Expiry Check", description = "Manually trigger background check and update statuses")
     public ResponseEntity<ApiResponse<Void>> triggerExpiryCheck() {
@@ -72,3 +86,4 @@ public class ExpiryTrackingController {
         return ResponseEntity.ok(ApiResponse.success(null, "Expiry status check triggered successfully"));
     }
 }
+

@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useContext } from 'react';
 import API from '../api/axiosConfig';
+import { AuthContext } from '../context/AuthContext';
 import { ToastContext } from '../context/ToastContext';
 import { Pagination } from '../components/Pagination';
 import { Modal } from '../components/Modal';
@@ -7,6 +8,9 @@ import { ConfirmationDialog } from '../components/ConfirmationDialog';
 import { Pill, Plus, Search, Filter, Edit, Trash2, Eye, Download, Tag, Factory, DollarSign, Layers } from 'lucide-react';
 
 export const MedicineList = () => {
+  const { user } = useContext(AuthContext);
+  const isStaff = user?.role === 'STAFF' || user?.role === 'VIEWER';
+
   const [medicines, setMedicines] = useState([]);
   const [categories, setCategories] = useState([]);
   const [suppliers, setSuppliers] = useState([]);
@@ -15,6 +19,8 @@ export const MedicineList = () => {
   // Search & Filter state
   const [search, setSearch] = useState('');
   const [categoryFilter, setCategoryFilter] = useState('');
+  const [supplierFilter, setSupplierFilter] = useState('');
+  const [stockStatusFilter, setStockStatusFilter] = useState('');
   const [page, setPage] = useState(0);
   const [size, setSize] = useState(10);
   const [totalPages, setTotalPages] = useState(1);
@@ -51,18 +57,41 @@ export const MedicineList = () => {
     fetchMedicines();
     fetchCategories();
     fetchSuppliers();
-  }, [search, categoryFilter, page, size, sortBy, sortDir]);
+  }, [search, categoryFilter, supplierFilter, stockStatusFilter, page, size, sortBy, sortDir]);
 
   const fetchMedicines = async () => {
     setLoading(true);
     try {
-      const res = await API.get('/api/medicines', {
-        params: { search, category: categoryFilter, page, size, sortBy, sortDir }
-      });
-      const data = res.data.data;
-      setMedicines(data.content || []);
-      setTotalPages(data.totalPages || 1);
+      const params = {
+        search: search || undefined,
+        category: categoryFilter || undefined,
+        supplierId: supplierFilter || undefined,
+        stockStatus: stockStatusFilter || undefined,
+        page,
+        size,
+        sortBy,
+        sortDir
+      };
+
+      const res = await API.get('/api/medicines', { params });
+      const data = res.data?.data;
+      let list = [];
+      let pages = 1;
+      if (Array.isArray(data)) {
+        list = data;
+      } else if (data?.content && Array.isArray(data.content)) {
+        list = data.content;
+        pages = data.totalPages || 1;
+      } else if (Array.isArray(res.data)) {
+        list = res.data;
+      } else if (res.data?.content && Array.isArray(res.data.content)) {
+        list = res.data.content;
+        pages = res.data.totalPages || 1;
+      }
+      setMedicines(list);
+      setTotalPages(pages);
     } catch (err) {
+      console.error('Fetch medicines error:', err);
       toast.error('Failed to load medicines list');
     } finally {
       setLoading(false);
@@ -72,15 +101,31 @@ export const MedicineList = () => {
   const fetchCategories = async () => {
     try {
       const res = await API.get('/api/medicines/categories');
-      setCategories(res.data.data || []);
+      setCategories(res.data?.data || res.data || []);
     } catch (err) {}
   };
 
   const fetchSuppliers = async () => {
     try {
-      const res = await API.get('/api/suppliers/active');
-      setSuppliers(res.data.data || []);
-    } catch (err) {}
+      let res;
+      try {
+        res = await API.get('/api/suppliers/active');
+      } catch (e) {
+        res = await API.get('/api/suppliers');
+      }
+      const data = res.data?.data;
+      let list = [];
+      if (Array.isArray(data)) {
+        list = data;
+      } else if (data?.content && Array.isArray(data.content)) {
+        list = data.content;
+      } else if (Array.isArray(res.data)) {
+        list = res.data;
+      }
+      setSuppliers(list);
+    } catch (err) {
+      console.error('Fetch suppliers for dropdown error:', err);
+    }
   };
 
   const handleOpenForm = (med = null) => {
@@ -177,43 +222,48 @@ export const MedicineList = () => {
     <div>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '28px', flexWrap: 'wrap', gap: '16px' }}>
         <div>
-          <h1 style={{ fontSize: '24px', fontWeight: 800, color: '#f8fafc' }}>Medicine Inventory Catalogue</h1>
-          <p style={{ color: '#94a3b8', fontSize: '14px', marginTop: '4px' }}>Pharmaceutical items, generic names, pricing, and stock status</p>
+          <h1 style={{ fontSize: '24px', fontWeight: 800, color: '#1e293b' }}>Medicine Inventory Catalogue</h1>
+          <p style={{ color: '#64748b', fontSize: '14px', marginTop: '4px' }}>
+            {isStaff ? 'View-only catalogue of pharmaceutical items and inventory status' : 'Pharmaceutical items, generic names, pricing, and stock status'}
+          </p>
         </div>
         <div style={{ display: 'flex', gap: '12px' }}>
           <button onClick={exportCSV} className="btn btn-secondary">
             <Download size={16} /> Export CSV
           </button>
-          <button onClick={() => handleOpenForm()} className="btn btn-primary">
-            <Plus size={16} /> Add New Medicine
-          </button>
+          {!isStaff && (
+            <button onClick={() => handleOpenForm()} className="btn btn-primary">
+              <Plus size={16} /> Add New Medicine
+            </button>
+          )}
         </div>
       </div>
 
       {/* Search & Filter Panel */}
       <div style={{
-        background: '#1e293b',
-        border: '1px solid #334155',
+        background: '#ffffff',
+        border: '1px solid #e2e8f0',
         borderRadius: '12px',
         padding: '16px 20px',
         marginBottom: '24px',
         display: 'flex',
         gap: '16px',
         flexWrap: 'wrap',
-        alignItems: 'center'
+        alignItems: 'center',
+        boxShadow: '0 1px 3px rgba(0,0,0,0.04)'
       }}>
-        <div style={{ flex: 1, minWidth: '240px', position: 'relative' }}>
-          <Search size={18} style={{ position: 'absolute', left: '14px', top: '12px', color: '#64748b' }} />
+        <div style={{ flex: 1, minWidth: '220px', position: 'relative' }}>
+          <Search size={18} style={{ position: 'absolute', left: '14px', top: '12px', color: '#94a3b8' }} />
           <input
             type="text"
-            placeholder="Search by name, code, generic name, or category..."
+            placeholder="Search by name, code, generic, batch #..."
             value={search}
             onChange={(e) => { setSearch(e.target.value); setPage(0); }}
             className="input-field"
             style={{ paddingLeft: '42px' }}
           />
         </div>
-        <div style={{ width: '180px' }}>
+        <div style={{ width: '160px' }}>
           <select
             value={categoryFilter}
             onChange={(e) => { setCategoryFilter(e.target.value); setPage(0); }}
@@ -225,6 +275,44 @@ export const MedicineList = () => {
             ))}
           </select>
         </div>
+        <div style={{ width: '170px' }}>
+          <select
+            value={supplierFilter}
+            onChange={(e) => { setSupplierFilter(e.target.value); setPage(0); }}
+            className="input-field"
+          >
+            <option value="">All Suppliers</option>
+            {suppliers.map((s) => (
+              <option key={s.id} value={s.id}>{s.supplierName}</option>
+            ))}
+          </select>
+        </div>
+        <div style={{ width: '160px' }}>
+          <select
+            value={stockStatusFilter}
+            onChange={(e) => { setStockStatusFilter(e.target.value); setPage(0); }}
+            className="input-field"
+          >
+            <option value="">All Stock Status</option>
+            <option value="AVAILABLE">Available</option>
+            <option value="LOW_STOCK">Low Stock</option>
+            <option value="OUT_OF_STOCK">Out of Stock</option>
+          </select>
+        </div>
+        {(search || categoryFilter || supplierFilter || stockStatusFilter) && (
+          <button
+            onClick={() => {
+              setSearch('');
+              setCategoryFilter('');
+              setSupplierFilter('');
+              setStockStatusFilter('');
+              setPage(0);
+            }}
+            className="btn btn-secondary btn-sm"
+          >
+            Clear Filters
+          </button>
+        )}
       </div>
 
       {/* Medicines Table */}
@@ -238,21 +326,22 @@ export const MedicineList = () => {
               <th>Batch #</th>
               <th>Pricing</th>
               <th>Supplier</th>
+              <th>Stock Status</th>
               <th style={{ textAlign: 'right' }}>Actions</th>
             </tr>
           </thead>
           <tbody>
             {loading ? (
-              <tr><td colSpan="7" style={{ textAlign: 'center', padding: '30px', color: '#94a3b8' }}>Loading medicine catalogue...</td></tr>
+              <tr><td colSpan="8" style={{ textAlign: 'center', padding: '30px', color: '#64748b' }}>Loading medicine catalogue...</td></tr>
             ) : medicines.length === 0 ? (
-              <tr><td colSpan="7" style={{ textAlign: 'center', padding: '30px', color: '#94a3b8' }}>No medicines found.</td></tr>
+              <tr><td colSpan="8" style={{ textAlign: 'center', padding: '30px', color: '#64748b' }}>No medicines found matching criteria.</td></tr>
             ) : (
               medicines.map((m) => (
                 <tr key={m.id}>
                   <td>
                     <div>
-                      <div style={{ fontWeight: 700, color: '#f8fafc' }}>{m.medicineName}</div>
-                      <div style={{ fontSize: '12px', color: '#38bdf8', display: 'flex', gap: '8px', marginTop: '2px' }}>
+                      <div style={{ fontWeight: 700, color: '#1e293b' }}>{m.medicineName}</div>
+                      <div style={{ fontSize: '12px', color: '#0284c7', display: 'flex', gap: '8px', marginTop: '2px' }}>
                         <span>{m.medicineCode}</span>
                         {m.genericName && <span>• {m.genericName}</span>}
                       </div>
@@ -263,26 +352,43 @@ export const MedicineList = () => {
                       <Tag size={12} /> {m.category || 'General'}
                     </span>
                   </td>
-                  <td style={{ color: '#cbd5e1' }}>{m.manufacturer || '-'}</td>
-                  <td style={{ color: '#94a3b8', fontSize: '13px' }}>{m.batchNumber || '-'}</td>
+                  <td style={{ color: '#475569' }}>{m.manufacturer || '-'}</td>
+                  <td style={{ color: '#64748b', fontSize: '13px' }}>{m.batchNumber || '-'}</td>
                   <td>
                     <div style={{ fontSize: '13px' }}>
-                      <div style={{ color: '#10b981', fontWeight: 700 }}>Buy: ${m.unitPrice}</div>
-                      <div style={{ color: '#38bdf8', fontWeight: 700 }}>Sell: ${m.sellingPrice}</div>
+                      <div style={{ color: '#059669', fontWeight: 700 }}>Buy: ₹{m.unitPrice}</div>
+                      <div style={{ color: '#0284c7', fontWeight: 700 }}>Sell: ₹{m.sellingPrice}</div>
                     </div>
                   </td>
-                  <td style={{ color: '#cbd5e1' }}>{m.supplierName || 'N/A'}</td>
+                  <td style={{ color: '#475569' }}>{m.supplierName || 'N/A'}</td>
+                  <td>
+                    {m.quantity !== undefined && m.quantity !== null ? (
+                      <span className={`badge ${
+                        m.quantity === 0 ? 'badge-danger' :
+                        (m.minimumStock && m.quantity < m.minimumStock) ? 'badge-warning' : 'badge-success'
+                      }`}>
+                        {m.quantity === 0 ? 'Out of Stock' :
+                         (m.minimumStock && m.quantity < m.minimumStock) ? `Low (${m.quantity})` : `In Stock (${m.quantity})`}
+                      </span>
+                    ) : (
+                      <span style={{ color: '#94a3b8', fontSize: '12px' }}>—</span>
+                    )}
+                  </td>
                   <td style={{ textAlign: 'right' }}>
                     <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '8px' }}>
                       <button onClick={() => { setSelectedMedicine(m); setIsDetailsModalOpen(true); }} className="btn btn-secondary btn-sm" title="View Details">
-                        <Eye size={14} />
+                        <Eye size={14} /> {isStaff && <span>View</span>}
                       </button>
-                      <button onClick={() => handleOpenForm(m)} className="btn btn-secondary btn-sm" title="Edit">
-                        <Edit size={14} />
-                      </button>
-                      <button onClick={() => { setSelectedMedicine(m); setIsDeleteDialogOpen(true); }} className="btn btn-danger btn-sm" title="Delete">
-                        <Trash2 size={14} />
-                      </button>
+                      {!isStaff && (
+                        <>
+                          <button onClick={() => handleOpenForm(m)} className="btn btn-secondary btn-sm" title="Edit">
+                            <Edit size={14} />
+                          </button>
+                          <button onClick={() => { setSelectedMedicine(m); setIsDeleteDialogOpen(true); }} className="btn btn-danger btn-sm" title="Delete">
+                            <Trash2 size={14} />
+                          </button>
+                        </>
+                      )}
                     </div>
                   </td>
                 </tr>
@@ -305,7 +411,7 @@ export const MedicineList = () => {
         <form onSubmit={handleSubmitForm} style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 2fr', gap: '16px' }}>
             <div>
-              <label style={{ display: 'block', fontSize: '13px', fontWeight: 600, color: '#cbd5e1', marginBottom: '6px' }}>Medicine Code *</label>
+              <label style={{ display: 'block', fontSize: '13px', fontWeight: 600, color: '#475569', marginBottom: '6px' }}>Medicine Code *</label>
               <input
                 type="text"
                 required
@@ -315,7 +421,7 @@ export const MedicineList = () => {
               />
             </div>
             <div>
-              <label style={{ display: 'block', fontSize: '13px', fontWeight: 600, color: '#cbd5e1', marginBottom: '6px' }}>Medicine Name *</label>
+              <label style={{ display: 'block', fontSize: '13px', fontWeight: 600, color: '#475569', marginBottom: '6px' }}>Medicine Name *</label>
               <input
                 type="text"
                 required
@@ -329,7 +435,7 @@ export const MedicineList = () => {
 
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
             <div>
-              <label style={{ display: 'block', fontSize: '13px', fontWeight: 600, color: '#cbd5e1', marginBottom: '6px' }}>Generic Name</label>
+              <label style={{ display: 'block', fontSize: '13px', fontWeight: 600, color: '#475569', marginBottom: '6px' }}>Generic Name</label>
               <input
                 type="text"
                 value={formData.genericName}
@@ -339,7 +445,7 @@ export const MedicineList = () => {
               />
             </div>
             <div>
-              <label style={{ display: 'block', fontSize: '13px', fontWeight: 600, color: '#cbd5e1', marginBottom: '6px' }}>Category</label>
+              <label style={{ display: 'block', fontSize: '13px', fontWeight: 600, color: '#475569', marginBottom: '6px' }}>Category</label>
               <input
                 type="text"
                 value={formData.category}
@@ -352,7 +458,7 @@ export const MedicineList = () => {
 
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
             <div>
-              <label style={{ display: 'block', fontSize: '13px', fontWeight: 600, color: '#cbd5e1', marginBottom: '6px' }}>Manufacturer</label>
+              <label style={{ display: 'block', fontSize: '13px', fontWeight: 600, color: '#475569', marginBottom: '6px' }}>Manufacturer</label>
               <input
                 type="text"
                 value={formData.manufacturer}
@@ -362,7 +468,7 @@ export const MedicineList = () => {
               />
             </div>
             <div>
-              <label style={{ display: 'block', fontSize: '13px', fontWeight: 600, color: '#cbd5e1', marginBottom: '6px' }}>Supplier</label>
+              <label style={{ display: 'block', fontSize: '13px', fontWeight: 600, color: '#475569', marginBottom: '6px' }}>Supplier</label>
               <select
                 value={formData.supplierId}
                 onChange={(e) => setFormData({ ...formData, supplierId: e.target.value })}
@@ -378,7 +484,7 @@ export const MedicineList = () => {
 
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '12px' }}>
             <div>
-              <label style={{ display: 'block', fontSize: '13px', fontWeight: 600, color: '#cbd5e1', marginBottom: '6px' }}>Purchase Price ($)</label>
+              <label style={{ display: 'block', fontSize: '13px', fontWeight: 600, color: '#475569', marginBottom: '6px' }}>Purchase Price (₹)</label>
               <input
                 type="number"
                 step="0.01"
@@ -389,7 +495,7 @@ export const MedicineList = () => {
               />
             </div>
             <div>
-              <label style={{ display: 'block', fontSize: '13px', fontWeight: 600, color: '#cbd5e1', marginBottom: '6px' }}>Selling Price ($)</label>
+              <label style={{ display: 'block', fontSize: '13px', fontWeight: 600, color: '#475569', marginBottom: '6px' }}>Selling Price (₹)</label>
               <input
                 type="number"
                 step="0.01"
@@ -400,7 +506,7 @@ export const MedicineList = () => {
               />
             </div>
             <div>
-              <label style={{ display: 'block', fontSize: '13px', fontWeight: 600, color: '#cbd5e1', marginBottom: '6px' }}>Batch Number</label>
+              <label style={{ display: 'block', fontSize: '13px', fontWeight: 600, color: '#475569', marginBottom: '6px' }}>Batch Number</label>
               <input
                 type="text"
                 value={formData.batchNumber}
@@ -411,11 +517,11 @@ export const MedicineList = () => {
           </div>
 
           {!selectedMedicine && (
-            <div style={{ background: '#0f172a', padding: '16px', borderRadius: '12px', border: '1px solid #334155' }}>
-              <div style={{ fontSize: '13px', fontWeight: 700, color: '#38bdf8', marginBottom: '12px' }}>Initial Inventory Setup</div>
+            <div style={{ background: '#f8fafc', padding: '16px', borderRadius: '12px', border: '1px solid #e2e8f0' }}>
+              <div style={{ fontSize: '13px', fontWeight: 700, color: '#0284c7', marginBottom: '12px' }}>Initial Inventory Setup</div>
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '12px' }}>
                 <div>
-                  <label style={{ display: 'block', fontSize: '12px', color: '#cbd5e1', marginBottom: '4px' }}>Initial Stock Qty</label>
+                  <label style={{ display: 'block', fontSize: '12px', color: '#475569', marginBottom: '4px' }}>Initial Stock Qty</label>
                   <input
                     type="number"
                     value={formData.initialQuantity}
@@ -424,7 +530,7 @@ export const MedicineList = () => {
                   />
                 </div>
                 <div>
-                  <label style={{ display: 'block', fontSize: '12px', color: '#cbd5e1', marginBottom: '4px' }}>Minimum Threshold</label>
+                  <label style={{ display: 'block', fontSize: '12px', color: '#475569', marginBottom: '4px' }}>Minimum Threshold</label>
                   <input
                     type="number"
                     value={formData.minimumStock}
@@ -433,7 +539,7 @@ export const MedicineList = () => {
                   />
                 </div>
                 <div>
-                  <label style={{ display: 'block', fontSize: '12px', color: '#cbd5e1', marginBottom: '4px' }}>Location</label>
+                  <label style={{ display: 'block', fontSize: '12px', color: '#475569', marginBottom: '4px' }}>Location</label>
                   <input
                     type="text"
                     value={formData.location}
@@ -446,7 +552,7 @@ export const MedicineList = () => {
           )}
 
           <div>
-            <label style={{ display: 'block', fontSize: '13px', fontWeight: 600, color: '#cbd5e1', marginBottom: '6px' }}>Description / Medical Usage</label>
+            <label style={{ display: 'block', fontSize: '13px', fontWeight: 600, color: '#475569', marginBottom: '6px' }}>Description / Medical Usage</label>
             <textarea
               rows="3"
               value={formData.description}
@@ -467,24 +573,27 @@ export const MedicineList = () => {
       <Modal isOpen={isDetailsModalOpen} onClose={() => setIsDetailsModalOpen(false)} title="Medicine Specification Sheet">
         {selectedMedicine && (
           <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-            <div style={{ background: '#0f172a', padding: '16px', borderRadius: '12px', border: '1px solid #334155' }}>
+            <div style={{ background: '#f8fafc', padding: '16px', borderRadius: '12px', border: '1px solid #e2e8f0' }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                <h3 style={{ fontSize: '18px', fontWeight: 700, color: '#f8fafc' }}>{selectedMedicine.medicineName}</h3>
+                <h3 style={{ fontSize: '18px', fontWeight: 700, color: '#1e293b' }}>{selectedMedicine.medicineName}</h3>
                 <span className="badge badge-info">{selectedMedicine.medicineCode}</span>
               </div>
-              <p style={{ color: '#38bdf8', fontSize: '13px', marginTop: '4px' }}>Generic: {selectedMedicine.genericName || 'N/A'}</p>
+              <p style={{ color: '#0284c7', fontSize: '13px', marginTop: '4px' }}>Generic: {selectedMedicine.genericName || 'N/A'}</p>
             </div>
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px', fontSize: '14px' }}>
               <div><strong>Category:</strong> {selectedMedicine.category}</div>
               <div><strong>Manufacturer:</strong> {selectedMedicine.manufacturer}</div>
               <div><strong>Batch Number:</strong> {selectedMedicine.batchNumber}</div>
               <div><strong>Supplier:</strong> {selectedMedicine.supplierName}</div>
-              <div><strong>Purchase Price:</strong> ${selectedMedicine.unitPrice}</div>
-              <div><strong>Selling Price:</strong> ${selectedMedicine.sellingPrice}</div>
+              <div><strong>Purchase Price:</strong> ₹{selectedMedicine.unitPrice}</div>
+              <div><strong>Selling Price:</strong> ₹{selectedMedicine.sellingPrice}</div>
+              {selectedMedicine.quantity !== undefined && (
+                <div><strong>Current Stock:</strong> {selectedMedicine.quantity} units</div>
+              )}
             </div>
             <div>
               <strong>Medical Description:</strong>
-              <p style={{ color: '#cbd5e1', marginTop: '4px', fontSize: '14px', lineHeight: 1.5 }}>
+              <p style={{ color: '#475569', marginTop: '4px', fontSize: '14px', lineHeight: 1.5 }}>
                 {selectedMedicine.description || 'No detailed instructions available.'}
               </p>
             </div>

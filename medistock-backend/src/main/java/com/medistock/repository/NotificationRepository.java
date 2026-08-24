@@ -13,4 +13,10 @@ public interface NotificationRepository extends JpaRepository<Notification, Long
     Page<Notification> findByNotificationType(NotificationType type, Pageable pageable);
     Page<Notification> findAllByOrderByCreatedAtDesc(Pageable pageable);
     long countByStatus(String status);
+    boolean existsByNotificationTypeAndRelatedMedicineIdAndStatus(NotificationType type, Long relatedMedicineId, String status);
+
+    @org.springframework.data.jpa.repository.Modifying
+    @org.springframework.data.jpa.repository.Query("UPDATE Notification n SET n.status = 'READ', n.readAt = CURRENT_TIMESTAMP WHERE n.status = 'UNREAD'")
+    void markAllUnreadAsRead();
+
 }

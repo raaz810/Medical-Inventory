@@ -1,12 +1,16 @@
 import React, { useState, useEffect, useContext } from 'react';
 import API from '../api/axiosConfig';
+import { AuthContext } from '../context/AuthContext';
 import { ToastContext } from '../context/ToastContext';
 import { Pagination } from '../components/Pagination';
 import { Modal } from '../components/Modal';
 import { ConfirmationDialog } from '../components/ConfirmationDialog';
-import { Users, Plus, Search, Filter, Edit, Trash2, Eye, Download, Mail, Phone, MapPin } from 'lucide-react';
+import { Users, Plus, Search, Filter, Edit, Trash2, Eye, Download, Mail, Phone, MapPin, MessageSquare, Shield } from 'lucide-react';
 
 export const SuppliersList = () => {
+  const { user } = useContext(AuthContext);
+  const isStaff = user?.role === 'STAFF' || user?.role === 'VIEWER';
+
   const [suppliers, setSuppliers] = useState([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
@@ -46,10 +50,24 @@ export const SuppliersList = () => {
       const res = await API.get('/api/suppliers', {
         params: { search, status: statusFilter, page, size, sortBy: 'supplierName', sortDir: 'ASC' }
       });
-      const data = res.data.data;
-      setSuppliers(data.content || []);
-      setTotalPages(data.totalPages || 1);
+      const data = res.data?.data;
+      let list = [];
+      let pages = 1;
+      if (Array.isArray(data)) {
+        list = data;
+      } else if (data?.content && Array.isArray(data.content)) {
+        list = data.content;
+        pages = data.totalPages || 1;
+      } else if (Array.isArray(res.data)) {
+        list = res.data;
+      } else if (res.data?.content && Array.isArray(res.data.content)) {
+        list = res.data.content;
+        pages = res.data.totalPages || 1;
+      }
+      setSuppliers(list);
+      setTotalPages(pages);
     } catch (err) {
+      console.error('Fetch suppliers error:', err);
       toast.error('Failed to load suppliers list');
     } finally {
       setLoading(false);
@@ -135,33 +153,38 @@ export const SuppliersList = () => {
     <div>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '28px', flexWrap: 'wrap', gap: '16px' }}>
         <div>
-          <h1 style={{ fontSize: '24px', fontWeight: 800, color: '#f8fafc' }}>Supplier Management</h1>
-          <p style={{ color: '#94a3b8', fontSize: '14px', marginTop: '4px' }}>Manage pharmaceutical vendors, contact info, and status</p>
+          <h1 style={{ fontSize: '24px', fontWeight: 800, color: '#1e293b' }}>Supplier Management</h1>
+          <p style={{ color: '#64748b', fontSize: '14px', marginTop: '4px' }}>
+            {isStaff ? 'View-only directory of verified pharmaceutical suppliers and contact info' : 'Manage pharmaceutical vendors, contact info, and status'}
+          </p>
         </div>
         <div style={{ display: 'flex', gap: '12px' }}>
           <button onClick={exportCSV} className="btn btn-secondary">
             <Download size={16} /> Export CSV
           </button>
-          <button onClick={() => handleOpenForm()} className="btn btn-primary">
-            <Plus size={16} /> Add New Supplier
-          </button>
+          {!isStaff && (
+            <button onClick={() => handleOpenForm()} className="btn btn-primary">
+              <Plus size={16} /> Add New Supplier
+            </button>
+          )}
         </div>
       </div>
 
       {/* Filter Bar */}
       <div style={{
-        background: '#1e293b',
-        border: '1px solid #334155',
+        background: '#ffffff',
+        border: '1px solid #e2e8f0',
         borderRadius: '12px',
         padding: '16px 20px',
         marginBottom: '24px',
         display: 'flex',
         gap: '16px',
         flexWrap: 'wrap',
-        alignItems: 'center'
+        alignItems: 'center',
+        boxShadow: '0 1px 3px rgba(0,0,0,0.04)'
       }}>
         <div style={{ flex: 1, minWidth: '240px', position: 'relative' }}>
-          <Search size={18} style={{ position: 'absolute', left: '14px', top: '12px', color: '#64748b' }} />
+          <Search size={18} style={{ position: 'absolute', left: '14px', top: '12px', color: '#94a3b8' }} />
           <input
             type="text"
             placeholder="Search by supplier name, email, or city..."
@@ -199,28 +222,28 @@ export const SuppliersList = () => {
           </thead>
           <tbody>
             {loading ? (
-              <tr><td colSpan="6" style={{ textAlign: 'center', padding: '30px', color: '#94a3b8' }}>Loading suppliers...</td></tr>
+              <tr><td colSpan="6" style={{ textAlign: 'center', padding: '30px', color: '#64748b' }}>Loading suppliers...</td></tr>
             ) : suppliers.length === 0 ? (
-              <tr><td colSpan="6" style={{ textAlign: 'center', padding: '30px', color: '#94a3b8' }}>No suppliers found.</td></tr>
+              <tr><td colSpan="6" style={{ textAlign: 'center', padding: '30px', color: '#64748b' }}>No suppliers found.</td></tr>
             ) : (
               suppliers.map((s) => (
                 <tr key={s.id}>
-                  <td style={{ fontWeight: 700, color: '#f8fafc' }}>{s.supplierName}</td>
-                  <td>{s.contactPerson || '-'}</td>
+                  <td style={{ fontWeight: 700, color: '#1e293b' }}>{s.supplierName}</td>
+                  <td style={{ color: '#475569' }}>{s.contactPerson || '-'}</td>
                   <td>
                     <div style={{ fontSize: '13px' }}>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '6px', color: '#cbd5e1' }}>
-                        <Mail size={13} color="#38bdf8" /> {s.email}
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '6px', color: '#475569' }}>
+                        <Mail size={13} color="#0284c7" /> {s.email}
                       </div>
                       {s.phone && (
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '6px', color: '#94a3b8', marginTop: '2px' }}>
-                          <Phone size={13} color="#14b8a6" /> {s.phone}
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '6px', color: '#64748b', marginTop: '2px' }}>
+                          <Phone size={13} color="#0d9488" /> {s.phone}
                         </div>
                       )}
                     </div>
                   </td>
                   <td>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '13px', color: '#94a3b8' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '13px', color: '#64748b' }}>
                       <MapPin size={13} /> {s.city ? `${s.city}, ${s.state || ''}` : '-'}
                     </div>
                   </td>
@@ -231,15 +254,22 @@ export const SuppliersList = () => {
                   </td>
                   <td style={{ textAlign: 'right' }}>
                     <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '8px' }}>
-                      <button onClick={() => { setSelectedSupplier(s); setIsDetailsModalOpen(true); }} className="btn btn-secondary btn-sm" title="View">
-                        <Eye size={14} />
+                      <button onClick={() => { setSelectedSupplier(s); setIsDetailsModalOpen(true); }} className="btn btn-secondary btn-sm" title="View Details">
+                        <Eye size={14} /> {isStaff && <span>View</span>}
                       </button>
-                      <button onClick={() => handleOpenForm(s)} className="btn btn-secondary btn-sm" title="Edit">
-                        <Edit size={14} />
-                      </button>
-                      <button onClick={() => { setSelectedSupplier(s); setIsDeleteDialogOpen(true); }} className="btn btn-danger btn-sm" title="Delete">
-                        <Trash2 size={14} />
-                      </button>
+                      {!isStaff && (
+                        <>
+                          <button onClick={() => handleOpenForm(s)} className="btn btn-secondary btn-sm" title="Edit">
+                            <Edit size={14} />
+                          </button>
+                          <button onClick={() => window.location.href = '/messages'} className="btn btn-secondary btn-sm" title="Direct Communication">
+                            <MessageSquare size={14} color="#0284c7" />
+                          </button>
+                          <button onClick={() => { setSelectedSupplier(s); setIsDeleteDialogOpen(true); }} className="btn btn-danger btn-sm" title="Delete">
+                            <Trash2 size={14} />
+                          </button>
+                        </>
+                      )}
                     </div>
                   </td>
                 </tr>
@@ -261,7 +291,7 @@ export const SuppliersList = () => {
       <Modal isOpen={isFormModalOpen} onClose={() => setIsFormModalOpen(false)} title={selectedSupplier ? 'Edit Supplier' : 'Add New Supplier'}>
         <form onSubmit={handleSubmitForm} style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
           <div>
-            <label style={{ display: 'block', fontSize: '13px', fontWeight: 600, color: '#cbd5e1', marginBottom: '6px' }}>
+            <label style={{ display: 'block', fontSize: '13px', fontWeight: 600, color: '#475569', marginBottom: '6px' }}>
               Supplier Name *
             </label>
             <input
@@ -276,7 +306,7 @@ export const SuppliersList = () => {
 
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
             <div>
-              <label style={{ display: 'block', fontSize: '13px', fontWeight: 600, color: '#cbd5e1', marginBottom: '6px' }}>
+              <label style={{ display: 'block', fontSize: '13px', fontWeight: 600, color: '#475569', marginBottom: '6px' }}>
                 Contact Person
               </label>
               <input
@@ -288,7 +318,7 @@ export const SuppliersList = () => {
               />
             </div>
             <div>
-              <label style={{ display: 'block', fontSize: '13px', fontWeight: 600, color: '#cbd5e1', marginBottom: '6px' }}>
+              <label style={{ display: 'block', fontSize: '13px', fontWeight: 600, color: '#475569', marginBottom: '6px' }}>
                 Status
               </label>
               <select
@@ -304,7 +334,7 @@ export const SuppliersList = () => {
 
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
             <div>
-              <label style={{ display: 'block', fontSize: '13px', fontWeight: 600, color: '#cbd5e1', marginBottom: '6px' }}>
+              <label style={{ display: 'block', fontSize: '13px', fontWeight: 600, color: '#475569', marginBottom: '6px' }}>
                 Email Address
               </label>
               <input
@@ -316,7 +346,7 @@ export const SuppliersList = () => {
               />
             </div>
             <div>
-              <label style={{ display: 'block', fontSize: '13px', fontWeight: 600, color: '#cbd5e1', marginBottom: '6px' }}>
+              <label style={{ display: 'block', fontSize: '13px', fontWeight: 600, color: '#475569', marginBottom: '6px' }}>
                 Phone Number
               </label>
               <input
@@ -330,7 +360,7 @@ export const SuppliersList = () => {
           </div>
 
           <div>
-            <label style={{ display: 'block', fontSize: '13px', fontWeight: 600, color: '#cbd5e1', marginBottom: '6px' }}>
+            <label style={{ display: 'block', fontSize: '13px', fontWeight: 600, color: '#475569', marginBottom: '6px' }}>
               Address
             </label>
             <input
@@ -344,7 +374,7 @@ export const SuppliersList = () => {
 
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '12px' }}>
             <div>
-              <label style={{ display: 'block', fontSize: '13px', fontWeight: 600, color: '#cbd5e1', marginBottom: '6px' }}>City</label>
+              <label style={{ display: 'block', fontSize: '13px', fontWeight: 600, color: '#475569', marginBottom: '6px' }}>City</label>
               <input
                 type="text"
                 value={formData.city}
@@ -354,7 +384,7 @@ export const SuppliersList = () => {
               />
             </div>
             <div>
-              <label style={{ display: 'block', fontSize: '13px', fontWeight: 600, color: '#cbd5e1', marginBottom: '6px' }}>State</label>
+              <label style={{ display: 'block', fontSize: '13px', fontWeight: 600, color: '#475569', marginBottom: '6px' }}>State</label>
               <input
                 type="text"
                 value={formData.state}
@@ -364,7 +394,7 @@ export const SuppliersList = () => {
               />
             </div>
             <div>
-              <label style={{ display: 'block', fontSize: '13px', fontWeight: 600, color: '#cbd5e1', marginBottom: '6px' }}>Country</label>
+              <label style={{ display: 'block', fontSize: '13px', fontWeight: 600, color: '#475569', marginBottom: '6px' }}>Country</label>
               <input
                 type="text"
                 value={formData.country}
@@ -386,9 +416,9 @@ export const SuppliersList = () => {
       <Modal isOpen={isDetailsModalOpen} onClose={() => setIsDetailsModalOpen(false)} title="Supplier Information Details">
         {selectedSupplier && (
           <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-            <div style={{ background: '#0f172a', padding: '16px', borderRadius: '12px', border: '1px solid #334155' }}>
-              <h3 style={{ fontSize: '18px', fontWeight: 700, color: '#38bdf8' }}>{selectedSupplier.supplierName}</h3>
-              <p style={{ color: '#94a3b8', fontSize: '13px', marginTop: '2px' }}>Contact Person: {selectedSupplier.contactPerson || 'N/A'}</p>
+            <div style={{ background: '#f8fafc', padding: '16px', borderRadius: '12px', border: '1px solid #e2e8f0' }}>
+              <h3 style={{ fontSize: '18px', fontWeight: 700, color: '#0284c7' }}>{selectedSupplier.supplierName}</h3>
+              <p style={{ color: '#64748b', fontSize: '13px', marginTop: '2px' }}>Contact Person: {selectedSupplier.contactPerson || 'N/A'}</p>
             </div>
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px', fontSize: '14px' }}>
               <div><strong>Email:</strong> {selectedSupplier.email || 'N/A'}</div>
@@ -400,7 +430,7 @@ export const SuppliersList = () => {
             </div>
             <div>
               <strong>Address:</strong>
-              <p style={{ color: '#cbd5e1', marginTop: '4px', fontSize: '14px' }}>{selectedSupplier.address || 'No street address specified.'}</p>
+              <p style={{ color: '#475569', marginTop: '4px', fontSize: '14px' }}>{selectedSupplier.address || 'No street address specified.'}</p>
             </div>
           </div>
         )}

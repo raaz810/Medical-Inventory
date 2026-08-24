@@ -43,6 +43,14 @@ app:
   cors:
     allowed-origins: http://localhost:5173,http://localhost:3000,http://localhost:8081
 
+# MediStock Custom Config
+medistock:
+  expiry:
+    threshold-days: 30
+  scheduler:
+    expiry-cron: "0 0 1 * * ?"
+
+
 # Swagger / OpenAPI
 springdoc:
   api-docs:

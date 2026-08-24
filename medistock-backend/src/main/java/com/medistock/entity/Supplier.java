@@ -14,6 +14,9 @@ public class Supplier {
     @Column(name = "supplier_name", nullable = false, length = 200)
     private String supplierName;
 
+    @Column(name = "name", length = 200)
+    private String name;
+
     @Column(name = "contact_person", length = 150)
     private String contactPerson;
 
@@ -46,6 +49,7 @@ public class Supplier {
     public Supplier(Long id, String supplierName, String contactPerson, String email, String phone, String address, String city, String state, String country, String status, LocalDateTime createdAt) {
         this.id = id;
         this.supplierName = supplierName;
+        this.name = supplierName;
         this.contactPerson = contactPerson;
         this.email = email;
         this.phone = phone;
@@ -61,6 +65,8 @@ public class Supplier {
     protected void onCreate() {
         this.createdAt = LocalDateTime.now();
         if (this.status == null) this.status = "ACTIVE";
+        if (this.name == null) this.name = this.supplierName;
+        if (this.supplierName == null) this.supplierName = this.name;
     }
 
     public Long getId() { return id; }

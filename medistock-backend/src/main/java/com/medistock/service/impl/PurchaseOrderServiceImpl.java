@@ -133,6 +133,44 @@ public class PurchaseOrderServiceImpl implements PurchaseOrderService {
     }
 
     @Override
+    @Transactional(readOnly = true)
+    public PageResponse<PurchaseOrderDTO> getOrdersBySupplier(Long supplierId, Pageable pageable) {
+        Page<PurchaseOrder> page = purchaseOrderRepository.findBySupplierId(supplierId, pageable);
+        List<PurchaseOrderDTO> dtos = page.getContent().stream().map(this::mapToDTO).toList();
+        return PageResponse.<PurchaseOrderDTO>builder()
+                .content(dtos)
+                .pageNumber(page.getNumber())
+                .pageSize(page.getSize())
+                .totalElements(page.getTotalElements())
+                .totalPages(page.getTotalPages())
+                .first(page.isFirst())
+                .last(page.isLast())
+                .build();
+    }
+
+    @Override
+    @Transactional
+    public PurchaseOrderDTO shipOrder(Long orderId, String trackingDetails, Long supplierUserId) {
+        PurchaseOrder order = purchaseOrderRepository.findById(orderId)
+                .orElseThrow(() -> new ResourceNotFoundException("PurchaseOrder", "id", orderId));
+
+        if (order.getStatus() != OrderStatus.APPROVED && order.getStatus() != OrderStatus.PENDING) {
+            throw new BadRequestException("Order cannot be shipped in status: " + order.getStatus());
+        }
+
+        order.setStatus(OrderStatus.SHIPPED);
+        PurchaseOrder saved = purchaseOrderRepository.save(order);
+
+        notificationService.createNotification(
+                "Medicine Shipped by Supplier",
+                "Purchase order #" + order.getOrderNumber() + " has been marked as SHIPPED by supplier." + (trackingDetails != null ? " Details: " + trackingDetails : ""),
+                NotificationType.PURCHASE_ALERT
+        );
+
+        return mapToDTO(saved);
+    }
+
+    @Override
     @Transactional
     public PurchaseOrderDTO updateOrderStatus(Long id, OrderStatus newStatus, String updatedBy) {
         PurchaseOrder order = purchaseOrderRepository.findById(id)

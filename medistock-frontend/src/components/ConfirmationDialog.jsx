@@ -15,7 +15,7 @@ export const ConfirmationDialog = ({ isOpen, onClose, onConfirm, title = "Confir
           <AlertTriangle size={24} />
         </div>
         <div>
-          <p style={{ color: '#cbd5e1', fontSize: '14px', lineHeight: 1.5 }}>
+          <p style={{ color: '#475569', fontSize: '14px', lineHeight: 1.5 }}>
             {message}
           </p>
         </div>
