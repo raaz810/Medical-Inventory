@@ -13,7 +13,7 @@ spring:
   datasource:
     url: ${SPRING_DATASOURCE_URL:jdbc:postgresql://localhost:5432/medistock_db}
     username: ${SPRING_DATASOURCE_USERNAME:postgres}
-    password: ${SPRING_DATASOURCE_PASSWORD:vishnu210}
+    password: ${SPRING_DATASOURCE_PASSWORD:Alone@7546}
     driver-class-name: org.postgresql.Driver
 
   jpa:
