@@ -40,9 +40,12 @@ app:
     refresh-expiration-ms: 604800000  # 7 days
 
 # CORS
+  # cors:
+  #   allowed-origins: http://localhost:5173,http://localhost:3000,http://localhost:8081
+app:
   cors:
-    allowed-origins: http://localhost:5173,http://localhost:3000,http://localhost:8081
-
+    allowed-origins: http://localhost:5173,http://localhost:3000,https://medical-inventory-eta.vercel.app
+    
 # MediStock Custom Config
 medistock:
   expiry:
